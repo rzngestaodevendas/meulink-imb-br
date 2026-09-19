@@ -38,6 +38,11 @@ function Router() {
     <Switch>
       <Route path="/" component={PublicProperty} />
       <Route path="/tabela/:slug" component={BrokerPortal} />
+      <Route path="/painelgestao" component={ProtectedApp} />
+      <Route path="/painelgestao/imoveis" component={ProtectedProperties} />
+      <Route path="/painelgestao/equipe" component={ProtectedTeam} />
+      <Route path="/painelgestao/auditoria" component={ProtectedAuditLog} />
+      <Route path="/painelgestao/construtoras" component={ProtectedOrganizations} />
       <Route path="/app" component={ProtectedApp} />
       <Route path="/app/imoveis" component={ProtectedProperties} />
       <Route path="/app/equipe" component={ProtectedTeam} />

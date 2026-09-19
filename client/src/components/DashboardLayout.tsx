@@ -28,11 +28,11 @@ import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Catálogo", path: "/app" },
-  { icon: Building2, label: "Gerenciar imóveis", path: "/app/imoveis" },
-  { icon: Users, label: "Equipe", path: "/app/equipe" },
-  { icon: ClipboardList, label: "Auditoria", path: "/app/auditoria" },
-  { icon: Factory, label: "Construtoras", path: "/app/construtoras" },
+  { icon: LayoutDashboard, label: "Catálogo", path: "/painelgestao" },
+  { icon: Building2, label: "Gerenciar imóveis", path: "/painelgestao/imoveis" },
+  { icon: Users, label: "Equipe", path: "/painelgestao/equipe" },
+  { icon: ClipboardList, label: "Auditoria", path: "/painelgestao/auditoria" },
+  { icon: Factory, label: "Construtoras", path: "/painelgestao/construtoras" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

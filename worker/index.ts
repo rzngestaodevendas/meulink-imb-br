@@ -45,4 +45,21 @@ const runtimeEnv = env as unknown as { DB: D1Database };
 (globalThis as typeof globalThis & { __MEULINK_D1?: D1Database }).__MEULINK_D1 = runtimeEnv.DB;
 
 app.listen(3000);
-export default httpServerHandler({ port: 3000 });
+const nodeHandler = httpServerHandler({ port: 3000 });
+
+export default {
+  async fetch(request: Request, workerEnv: { ASSETS: Fetcher }, ctx: ExecutionContext) {
+    const pathname = new URL(request.url).pathname;
+    const isBackendRoute = pathname === "/health" || pathname.startsWith("/api/") || pathname.startsWith("/media/");
+    if (isBackendRoute) {
+      return nodeHandler.fetch(request, workerEnv, ctx);
+    }
+
+    const isStaticAsset = pathname === "/" || pathname === "/index.html" || pathname.startsWith("/assets/") || pathname === "/favicon.ico" || pathname === "/robots.txt";
+    if (isStaticAsset) {
+      return workerEnv.ASSETS.fetch(request);
+    }
+
+    return workerEnv.ASSETS.fetch(new Request(new URL("/", request.url), request));
+  },
+};
