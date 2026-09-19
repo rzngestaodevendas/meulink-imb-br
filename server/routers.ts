@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { organizationInvites, organizationMembers, organizations, properties, shareLinks, users } from "../drizzle/schema";
-import { ensurePasswordColumn, getAuditLogs, getDb, getOrganizationForUser, getUserByEmail, writeAuditLog } from "./db";
+import { ensureOrganizationColumns, ensurePasswordColumn, getAuditLogs, getDb, getOrganizationForUser, getUserByEmail, writeAuditLog } from "./db";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
 import { COOKIE_NAME } from "@shared/const";
@@ -49,6 +49,7 @@ function parseProperty(row: typeof properties.$inferSelect, includeInternal = tr
 }
 
 async function requireCompanyAdmin(ctx: { user: { id: number; openId: string; role: string; activeOrganizationId?: number | null } }) {
+  await ensureOrganizationColumns();
   const scope = await getOrganizationForUser(ctx.user.id, ctx.user.openId, ctx.user.role, ctx.user.activeOrganizationId ?? undefined);
   if (!scope) throw new TRPCError({ code: "FORBIDDEN", message: "Sua conta ainda não está vinculada a uma empresa." });
   if (scope.memberRole !== "company_admin" && ctx.user.role !== "admin") {
@@ -104,15 +105,15 @@ export const appRouter = router({
 
   organizations: router({
     list: protectedProcedure.query(async ({ ctx }) => {
+      await ensureOrganizationColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
-      return db.select({ id: organizations.id, slug: organizations.slug, name: organizations.name, publicName: organizations.publicName, createdAt: organizations.createdAt })
-        .from(organizationMembers)
-        .innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
-        .where(eq(organizationMembers.userId, ctx.user.id));
+      if (ctx.user.role === "admin") return db.select().from(organizations).orderBy(organizations.name);
+      return db.select().from(organizationMembers).innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id)).where(eq(organizationMembers.userId, ctx.user.id)).then(rows => rows.map(row => row.organizations));
     }),
 
-    create: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(180), publicName: z.string().trim().max(180).optional().default("") })).mutation(async ({ ctx, input }) => {
+    create: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(180), publicName: z.string().trim().max(180).optional().default(""), logoUrl: z.string().trim().url().or(z.string().trim().startsWith("/media/")).or(z.literal("")), contactName: z.string().trim().max(180).optional().default(""), contactPhone: z.string().trim().max(32).optional().default(""), tableType: z.enum(["third_party", "own_development"]), developmentName: z.string().trim().max(180).optional().default(""), developmentDescription: z.string().trim().max(2000).optional().default("") })).mutation(async ({ ctx, input }) => {
+      await ensureOrganizationColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       if (ctx.user.role !== "admin") {
@@ -121,7 +122,8 @@ export const appRouter = router({
       }
       const slugBase = input.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100) || "construtora";
       const slug = `${slugBase}-${nanoid(6).toLowerCase()}`;
-      await db.insert(organizations).values({ slug, name: input.name, publicName: input.publicName || input.name });
+      if (input.tableType === "own_development" && !input.developmentName) throw new TRPCError({ code: "BAD_REQUEST", message: "Informe o nome do empreendimento próprio." });
+      await db.insert(organizations).values({ slug, name: input.name, publicName: input.publicName || input.name, logoUrl: input.logoUrl || null, contactName: input.contactName || null, contactPhone: input.contactPhone || null, tableType: input.tableType, developmentName: input.developmentName || null, developmentDescription: input.developmentDescription || null });
       const [createdOrganization] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, slug)).limit(1);
       if (!createdOrganization) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível criar a construtora." });
       const organizationId = createdOrganization.id;
@@ -132,10 +134,12 @@ export const appRouter = router({
     }),
 
     select: protectedProcedure.input(z.object({ organizationId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      await ensureOrganizationColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const [membership] = await db.select().from(organizationMembers).where(and(eq(organizationMembers.organizationId, input.organizationId), eq(organizationMembers.userId, ctx.user.id))).limit(1);
-      if (!membership) throw new TRPCError({ code: "FORBIDDEN", message: "Você não pertence a esta construtora." });
+      if (!membership && ctx.user.role === "admin") await db.insert(organizationMembers).values({ organizationId: input.organizationId, userId: ctx.user.id, role: "company_admin" });
+      else if (!membership) throw new TRPCError({ code: "FORBIDDEN", message: "Você não pertence a esta construtora." });
       await db.update(users).set({ activeOrganizationId: input.organizationId }).where(eq(users.id, ctx.user.id));
       await recordAudit(ctx, input.organizationId, "organization.selected", "organization", input.organizationId);
       return { success: true as const };
@@ -170,16 +174,18 @@ export const appRouter = router({
     }),
 
     publicLink: publicProcedure.input(z.object({ token: z.string().trim().min(8).max(80) })).query(async ({ input }) => {
+      await ensureOrganizationColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
-      const [link] = await db.select({ link: shareLinks, property: properties }).from(shareLinks).innerJoin(properties, eq(shareLinks.propertyId, properties.id)).where(and(eq(shareLinks.token, input.token), eq(shareLinks.enabled, 1), eq(properties.publicEnabled, 1), eq(properties.status, "available"))).limit(1);
+      const [link] = await db.select({ link: shareLinks, property: properties, organization: organizations }).from(shareLinks).innerJoin(properties, eq(shareLinks.propertyId, properties.id)).innerJoin(organizations, eq(shareLinks.organizationId, organizations.id)).where(and(eq(shareLinks.token, input.token), eq(shareLinks.enabled, 1), eq(properties.publicEnabled, 1), eq(properties.status, "available"))).limit(1);
       if (!link) throw new TRPCError({ code: "NOT_FOUND", message: "Link de imóvel inválido ou expirado" });
-      return { property: parseProperty(link.property, false), broker: { name: link.link.brokerName, phone: link.link.brokerPhone } };
+      return { property: parseProperty(link.property, false), broker: { name: link.link.brokerName, phone: link.link.brokerPhone }, organization: { name: link.organization.publicName || link.organization.name, logoUrl: link.organization.logoUrl, contactName: link.organization.contactName, contactPhone: link.organization.contactPhone, tableType: link.organization.tableType, developmentName: link.organization.developmentName } };
     }),
   }),
 
   portal: router({
     catalog: protectedProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ ctx, input }) => {
+      await ensureOrganizationColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const [organization] = await db.select().from(organizations).where(eq(organizations.slug, input.slug)).limit(1);
@@ -187,7 +193,7 @@ export const appRouter = router({
       const [membership] = await db.select().from(organizationMembers).where(and(eq(organizationMembers.organizationId, organization.id), eq(organizationMembers.userId, ctx.user.id))).limit(1);
       if (!membership) throw new TRPCError({ code: "FORBIDDEN", message: "Sua conta não tem acesso a esta tabela." });
       const rows = await db.select().from(properties).where(and(eq(properties.organizationId, organization.id), eq(properties.status, "available"), eq(properties.publicEnabled, 1))).orderBy(properties.title);
-      return { organization: { id: organization.id, slug: organization.slug, name: organization.name, publicName: organization.publicName }, memberRole: membership.role, properties: rows.map(row => parseProperty(row, true)) };
+      return { organization: { id: organization.id, slug: organization.slug, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, contactName: organization.contactName, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName, developmentDescription: organization.developmentDescription }, memberRole: membership.role, properties: rows.map(row => parseProperty(row, true)) };
     }),
   }),
 

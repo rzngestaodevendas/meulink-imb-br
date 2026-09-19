@@ -39,6 +39,7 @@ export default function ManageProperties() {
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [form, setForm] = useState<FormState>(blankForm);
   const catalog = trpc.catalog.list.useQuery({ search }, { staleTime: 10_000 });
+  const organizations = trpc.organizations.list.useQuery();
   const utils = trpc.useUtils();
   const create = trpc.properties.create.useMutation({ onSuccess: () => { toast.success("Imóvel cadastrado"); setEditing(null); setForm(blankForm); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
   const update = trpc.properties.update.useMutation({ onSuccess: () => { toast.success("Imóvel atualizado"); setEditing(null); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
@@ -48,7 +49,8 @@ export default function ManageProperties() {
   const properties = (catalog.data || []) as Property[];
   const editingProperty = useMemo(() => editing && editing !== "new" ? properties.find(property => property.id === editing) : undefined, [editing, properties]);
 
-  function openNew() { setEditing("new"); setForm(blankForm); }
+  const hasOrganization = Boolean(organizations.data?.length);
+  function openNew() { if (!hasOrganization) { toast.error("Cadastre ou selecione uma construtora/tabela antes de incluir imóveis."); window.location.href = "/painelgestao/construtoras"; return; } setEditing("new"); setForm(blankForm); }
   function openEdit(property: Property) { setEditing(property.id); setForm(toForm(property)); }
   function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -62,9 +64,11 @@ export default function ManageProperties() {
     <header className="mb-6 rounded-3xl bg-[#102c3d] px-6 py-7 text-white shadow-xl sm:px-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div><div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#d7b874]"><Building2 className="h-4 w-4" /> MeuLink · gestão</div><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Gerenciar imóveis</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Cadastre, revise e controle o que pode aparecer nos links públicos.</p></div>
-        <Button onClick={openNew} className="gap-2 bg-[#d7b874] text-[#102c3d] hover:bg-[#e6cc94]"><Plus className="h-4 w-4" /> Novo imóvel</Button>
+        <Button onClick={openNew} disabled={!hasOrganization} className="gap-2 bg-[#d7b874] text-[#102c3d] hover:bg-[#e6cc94]"><Plus className="h-4 w-4" /> Novo imóvel</Button>
       </div>
     </header>
+
+    {!hasOrganization && !organizations.isLoading && <Card className="mb-6 border-amber-200 bg-amber-50 shadow-sm"><CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold text-amber-950">Cadastre a construtora antes do imóvel</p><p className="mt-1 text-sm text-amber-900/80">Todo imóvel precisa pertencer a uma tabela, com logo, contato e tipo de estoque definidos.</p></div><Button onClick={() => { window.location.href = "/painelgestao/construtoras"; }} className="bg-[#102c3d] hover:bg-[#173e53]">Cadastrar construtora</Button></CardContent></Card>}
 
     {editing !== null && <Card className="mb-6 border-0 shadow-sm"><CardHeader className="flex flex-row items-center justify-between"><CardTitle>{editing === "new" ? "Cadastrar imóvel" : `Editar ${editingProperty?.title || "imóvel"}`}</CardTitle><Button variant="ghost" size="icon" onClick={() => setEditing(null)} aria-label="Fechar formulário"><X className="h-4 w-4" /></Button></CardHeader><CardContent><form onSubmit={submit} className="grid gap-4 lg:grid-cols-2">
       <label className="grid gap-2 text-sm font-medium">Título<Input required value={form.title} onChange={event => setForm({ ...form, title: event.target.value })} placeholder="Ex.: Apartamento Sofia Palace 1207" /></label>
@@ -80,7 +84,7 @@ export default function ManageProperties() {
       <div className="flex flex-wrap justify-end gap-2 lg:col-span-2"><Button type="button" variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button type="submit" disabled={busy} className="gap-2 bg-[#20bd63] hover:bg-[#12934a]"><Save className="h-4 w-4" /> {busy ? "Salvando..." : "Salvar imóvel"}</Button></div>
     </form></CardContent></Card>}
 
-    <Card className="mb-6 border-0 shadow-sm"><CardHeader><CardTitle className="flex items-center gap-2 text-base text-[#102c3d]"><UploadCloud className="h-4 w-4" /> Importar imóveis da tabela</CardTitle><p className="text-xs text-slate-500">Cole CSV separado por ponto e vírgula. Use <strong>detalhes</strong> e <strong>fotos</strong> separados por barra vertical (<code>|</code>).</p></CardHeader><CardContent><textarea value={importCsv} onChange={event => setImportCsv(event.target.value)} className="min-h-32 w-full rounded-md border bg-background px-3 py-2 font-mono text-xs" placeholder={sampleCsv} /><div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-slate-500">Até 200 imóveis por importação. Fotos devem ser URLs públicas ou do storage do MeuLink.</p><Button disabled={bulkCreate.isPending || !importCsv.trim()} onClick={() => { try { bulkCreate.mutate({ rows: parseTable(importCsv) }); } catch (error) { toast.error(error instanceof Error ? error.message : "Tabela inválida"); } }} className="gap-2 bg-[#20bd63] hover:bg-[#12934a]"><UploadCloud className="h-4 w-4" /> {bulkCreate.isPending ? "Importando..." : "Importar tabela"}</Button></div></CardContent></Card>
+    <Card className="mb-6 border-0 shadow-sm"><CardHeader><CardTitle className="flex items-center gap-2 text-base text-[#102c3d]"><UploadCloud className="h-4 w-4" /> Importar imóveis da tabela</CardTitle><p className="text-xs text-slate-500">Cole CSV separado por ponto e vírgula. A importação será vinculada à tabela selecionada.</p></CardHeader><CardContent><textarea disabled={!hasOrganization} value={importCsv} onChange={event => setImportCsv(event.target.value)} className="min-h-32 w-full rounded-md border bg-background px-3 py-2 font-mono text-xs disabled:cursor-not-allowed disabled:bg-slate-100" placeholder={hasOrganization ? sampleCsv : "Cadastre uma construtora para liberar a importação."} /><div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-slate-500">Até 200 imóveis por importação. Fotos podem ser URLs públicas ou do storage do MeuLink.</p><Button disabled={!hasOrganization || bulkCreate.isPending || !importCsv.trim()} onClick={() => { try { bulkCreate.mutate({ rows: parseTable(importCsv) }); } catch (error) { toast.error(error instanceof Error ? error.message : "Tabela inválida"); } }} className="gap-2 bg-[#20bd63] hover:bg-[#12934a]"><UploadCloud className="h-4 w-4" /> {bulkCreate.isPending ? "Importando..." : "Importar tabela"}</Button></div></CardContent></Card>
 
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm text-slate-500">{properties.length} imóveis encontrados</p><h2 className="text-xl font-semibold text-[#102c3d]">Estoque da empresa</h2></div><Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar por título, endereço ou preço" className="h-10 bg-white sm:max-w-sm" /></div>
     {catalog.isLoading && <div className="rounded-2xl bg-white p-10 text-center text-sm text-slate-500">Carregando imóveis...</div>}

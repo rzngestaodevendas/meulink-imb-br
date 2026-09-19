@@ -23,6 +23,12 @@ export const organizations = sqliteTable("organizations", {
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
   publicName: text("publicName"),
+  logoUrl: text("logoUrl"),
+  contactName: text("contactName"),
+  contactPhone: text("contactPhone"),
+  tableType: text("tableType", { enum: ["third_party", "own_development"] }).notNull().default("third_party"),
+  developmentName: text("developmentName"),
+  developmentDescription: text("developmentDescription"),
   createdAt: timestamp("createdAt"),
   updatedAt: timestamp("updatedAt"),
 });
