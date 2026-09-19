@@ -1,0 +1,124 @@
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/beach-sky-702-box_0.jpg (size: 94222 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/beach-sky-702-box_0_05adbbbf.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/beach-sky-703-box-duplo_0.jpg (size: 94222 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/beach-sky-703-box-duplo_0_5b2147d6.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/beach-sky-705-box_0.jpg (size: 94222 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/beach-sky-705-box_0_b1a53f93.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/beach-sky-710-com-box_0.jpg (size: 94222 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/beach-sky-710-com-box_0_2d55cc91.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/beach-sky-loja-05_0.jpg (size: 80468 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/beach-sky-loja-05_0_9c53c546.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/everest-tower-box-30_0.jpg (size: 113509 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/everest-tower-box-30_0_1e920995.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/everest-tower-dep-04_0.jpg (size: 113509 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/everest-tower-dep-04_0_3479fc18.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/everest-tower-dep-05_0.jpg (size: 113509 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/everest-tower-dep-05_0_32b6c316.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/jk-em-parob-rs_0.jpg (size: 67313 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/jk-em-parob-rs_0_c2e3d39d.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/loja-na-av-paraguassu_0.jpg (size: 49796 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/loja-na-av-paraguassu_0_af9ab88b.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/lote-cond-allure_0.jpg (size: 91822 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/lote-cond-allure_0_8068fc7a.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/mans-o-neoclassica_0.jpg (size: 100601 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/mans-o-neoclassica_0_002e4bbd.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/pavilh-o-industrial_0.jpg (size: 47166 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/pavilh-o-industrial_0_8b33171a.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/r-1-900-000-00_0.jpg (size: 94222 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/r-1-900-000-00_0_59c48cc1.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/rea-com-benfeitorias-1-6-hectares_0.jpg (size: 94222 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/rea-com-benfeitorias-1-6-hectares_0_7de3905a.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-1004-c-box_0.jpg (size: 81832 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/sofia-palace-1004-c-box_0_967435bb.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-1007-c-box_0.jpg (size: 81832 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/sofia-palace-1007-c-box_0_9587682a.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-1101-c-box_0.jpg (size: 81832 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/sofia-palace-1101-c-box_0_0c7db73a.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-1104-c-box_0.jpg (size: 81832 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/sofia-palace-1104-c-box_0_0806e933.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-1105-c-box_0.jpg (size: 81832 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/sofia-palace-1105-c-box_0_5510daae.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-1207-c-box_0.jpg (size: 81832 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/sofia-palace-1207-c-box_0_aa7ad3e2.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-405-c-box_0.jpg (size: 81832 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/sofia-palace-405-c-box_0_18233649.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-502-c-box_0.jpg (size: 81832 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/sofia-palace-502-c-box_0_4566cbc1.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-503-c-box_0.jpg (size: 81832 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/sofia-palace-503-c-box_0_b7fbc530.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-805-c-box_0.jpg (size: 81832 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/sofia-palace-805-c-box_0_7e442882.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-901-c-box_0.jpg (size: 81832 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/sofia-palace-901-c-box_0_ddcdff19.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-901-c-box_1.jpg (size: 81832 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/sofia-palace-901-c-box_1_272d25cc.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/terreno-peri_0.jpg (size: 78826 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/terreno-peri_0_4bcbb31f.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/terreno-rua-taquari_0.jpg (size: 67342 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/terreno-rua-taquari_0_999b2b28.jpg
+Uploading file (webdev private): /home/ubuntu/webdev-static-assets/meulink-fotos/viz-home-lake-l-18_0.jpg (size: 101687 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/viz-home-lake-l-18_0_b599c5ba.jpg
+
+========== Upload Summary ==========
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/beach-sky-702-box_0.jpg -> /manus-storage/beach-sky-702-box_0_05adbbbf.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/beach-sky-703-box-duplo_0.jpg -> /manus-storage/beach-sky-703-box-duplo_0_5b2147d6.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/beach-sky-705-box_0.jpg -> /manus-storage/beach-sky-705-box_0_b1a53f93.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/beach-sky-710-com-box_0.jpg -> /manus-storage/beach-sky-710-com-box_0_2d55cc91.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/beach-sky-loja-05_0.jpg -> /manus-storage/beach-sky-loja-05_0_9c53c546.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/everest-tower-box-30_0.jpg -> /manus-storage/everest-tower-box-30_0_1e920995.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/everest-tower-dep-04_0.jpg -> /manus-storage/everest-tower-dep-04_0_3479fc18.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/everest-tower-dep-05_0.jpg -> /manus-storage/everest-tower-dep-05_0_32b6c316.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/jk-em-parob-rs_0.jpg -> /manus-storage/jk-em-parob-rs_0_c2e3d39d.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/loja-na-av-paraguassu_0.jpg -> /manus-storage/loja-na-av-paraguassu_0_af9ab88b.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/lote-cond-allure_0.jpg -> /manus-storage/lote-cond-allure_0_8068fc7a.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/mans-o-neoclassica_0.jpg -> /manus-storage/mans-o-neoclassica_0_002e4bbd.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/pavilh-o-industrial_0.jpg -> /manus-storage/pavilh-o-industrial_0_8b33171a.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/r-1-900-000-00_0.jpg -> /manus-storage/r-1-900-000-00_0_59c48cc1.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/rea-com-benfeitorias-1-6-hectares_0.jpg -> /manus-storage/rea-com-benfeitorias-1-6-hectares_0_7de3905a.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-1004-c-box_0.jpg -> /manus-storage/sofia-palace-1004-c-box_0_967435bb.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-1007-c-box_0.jpg -> /manus-storage/sofia-palace-1007-c-box_0_9587682a.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-1101-c-box_0.jpg -> /manus-storage/sofia-palace-1101-c-box_0_0c7db73a.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-1104-c-box_0.jpg -> /manus-storage/sofia-palace-1104-c-box_0_0806e933.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-1105-c-box_0.jpg -> /manus-storage/sofia-palace-1105-c-box_0_5510daae.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-1207-c-box_0.jpg -> /manus-storage/sofia-palace-1207-c-box_0_aa7ad3e2.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-405-c-box_0.jpg -> /manus-storage/sofia-palace-405-c-box_0_18233649.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-502-c-box_0.jpg -> /manus-storage/sofia-palace-502-c-box_0_4566cbc1.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-503-c-box_0.jpg -> /manus-storage/sofia-palace-503-c-box_0_b7fbc530.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-805-c-box_0.jpg -> /manus-storage/sofia-palace-805-c-box_0_7e442882.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-901-c-box_0.jpg -> /manus-storage/sofia-palace-901-c-box_0_ddcdff19.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/sofia-palace-901-c-box_1.jpg -> /manus-storage/sofia-palace-901-c-box_1_272d25cc.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/terreno-peri_0.jpg -> /manus-storage/terreno-peri_0_4bcbb31f.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/terreno-rua-taquari_0.jpg -> /manus-storage/terreno-rua-taquari_0_999b2b28.jpg
+[SUCCESS] /home/ubuntu/webdev-static-assets/meulink-fotos/viz-home-lake-l-18_0.jpg -> /manus-storage/viz-home-lake-l-18_0_b599c5ba.jpg
+=====================================
+Total: 30, Success: 30, Failed: 0
