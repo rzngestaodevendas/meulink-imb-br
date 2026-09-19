@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { organizationInvites, organizationMembers, organizations, properties, shareLinks, users } from "../drizzle/schema";
-import { ensureOrganizationColumns, ensurePasswordColumn, getAuditLogs, getDb, getOrganizationForUser, getPhotosBucket, getUserByEmail, writeAuditLog } from "./db";
+import { ensureBrokerProfileColumns, ensureOrganizationColumns, ensurePasswordColumn, getAuditLogs, getDb, getOrganizationForUser, getPhotosBucket, getUserByEmail, writeAuditLog } from "./db";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
 import { COOKIE_NAME } from "@shared/const";
@@ -67,6 +67,26 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    register: publicProcedure.input(z.object({ organizationId: z.number().int().positive(), name: z.string().trim().min(5).max(180), email: z.string().trim().email(), password: z.string().min(8).max(200), whatsapp: z.string().regex(/^\d{12,15}$/), creci: z.string().trim().min(2).max(40), profilePhotoUrl: z.string().trim().startsWith("/media/").optional().default("") })).mutation(async ({ ctx, input }) => {
+      await ensurePasswordColumn(); await ensureBrokerProfileColumns();
+      const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const email = input.email.toLowerCase();
+      if (await getUserByEmail(email)) throw new TRPCError({ code: "CONFLICT", message: "Este e-mail já possui cadastro. Use Entrar." });
+      const [organization] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.id, input.organizationId)).limit(1);
+      if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." });
+      const openId = `broker:${email}`;
+      await db.insert(users).values({ openId, name: input.name, email, passwordHash: await hashPassword(input.password), whatsapp: input.whatsapp, creci: input.creci, profilePhotoUrl: input.profilePhotoUrl || null, loginMethod: "email", role: "user" });
+      const [user] = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+      if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível criar o cadastro." });
+      await db.insert(organizationMembers).values({ organizationId: input.organizationId, userId: user.id, role: "broker" });
+      await db.update(users).set({ activeOrganizationId: input.organizationId }).where(eq(users.id, user.id));
+      const token = await sdk.createSessionToken(openId, { name: input.name });
+      ctx.res.cookie(COOKIE_NAME, token, { ...getSessionCookieOptions(ctx.req), maxAge: 365 * 24 * 60 * 60 * 1000 });
+      return { success: true as const };
+    }),
+    updateProfile: protectedProcedure.input(z.object({ name: z.string().trim().min(5).max(180), whatsapp: z.string().regex(/^\d{12,15}$/), creci: z.string().trim().min(2).max(40), profilePhotoUrl: z.string().trim().startsWith("/media/").or(z.literal("")) })).mutation(async ({ ctx, input }) => { await ensureBrokerProfileColumns(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); await db.update(users).set({ name: input.name, whatsapp: input.whatsapp, creci: input.creci, profilePhotoUrl: input.profilePhotoUrl || null }).where(eq(users.id, ctx.user.id)); return { success: true as const }; }),
+    uploadProfilePhoto: protectedProcedure.input(z.object({ fileName: z.string().trim().min(1).max(160), contentType: z.enum(["image/jpeg", "image/png", "image/webp"]), data: z.string().min(100).max(12_000_000) })).mutation(async ({ ctx, input }) => { const bucket = getPhotosBucket(); if (!bucket) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Armazenamento de fotos indisponível." }); const encoded = input.data.includes(",") ? input.data.split(",", 2)[1] : input.data; const binary = atob(encoded); const bytes = new Uint8Array(binary.length); for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index); const safeName = input.fileName.toLowerCase().replace(/[^a-z0-9.-]+/g, "-").slice(-100) || "perfil.jpg"; const key = `brokers/${ctx.user.id}/${Date.now()}-${nanoid(8)}-${safeName}`; await bucket.put(key, bytes, { httpMetadata: { contentType: input.contentType, cacheControl: "public, max-age=31536000, immutable" } }); return { url: `/media/${key}` }; }),
+    forgotPassword: publicProcedure.input(z.object({ email: z.string().trim().email() })).mutation(async () => ({ success: true as const, message: "Se o e-mail estiver cadastrado, o administrador da tabela deverá enviar uma nova senha." })),
     login: publicProcedure.input(z.object({ email: z.string().trim().email(), password: z.string().min(8).max(200) })).mutation(async ({ ctx, input }) => {
       await ensurePasswordColumn();
       const normalizedEmail = input.email.toLowerCase();
@@ -113,7 +133,7 @@ export const appRouter = router({
       return db.select().from(organizationMembers).innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id)).where(eq(organizationMembers.userId, ctx.user.id)).then(rows => rows.map(row => row.organizations));
     }),
 
-    create: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(180), publicName: z.string().trim().max(180).optional().default(""), logoUrl: z.string().trim().url().or(z.string().trim().startsWith("/media/")).or(z.literal("")), contactName: z.string().trim().max(180).optional().default(""), contactPhone: z.string().trim().max(32).optional().default(""), tableType: z.enum(["third_party", "own_development"]), developmentName: z.string().trim().max(180).optional().default(""), developmentDescription: z.string().trim().max(2000).optional().default("") })).mutation(async ({ ctx, input }) => {
+    create: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(180), publicName: z.string().trim().max(180).optional().default(""), logoUrl: z.string().trim().url().or(z.string().trim().startsWith("/media/")).or(z.literal("")), contactName: z.string().trim().max(180).optional().default(""), contactPhone: z.string().trim().max(32).optional().default(""), secondaryContactName: z.string().trim().max(180).optional().default(""), secondaryContactPhone: z.string().trim().max(32).optional().default(""), contactEmail: z.string().trim().email().or(z.literal("")), contactAddress: z.string().trim().max(500).optional().default(""), websiteUrl: z.string().trim().url().or(z.literal("")), tableType: z.enum(["third_party", "own_development"]), developmentName: z.string().trim().max(180).optional().default(""), developmentDescription: z.string().trim().max(2000).optional().default("") })).mutation(async ({ ctx, input }) => {
       await ensureOrganizationColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
@@ -124,7 +144,7 @@ export const appRouter = router({
       const slugBase = input.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100) || "construtora";
       const slug = `${slugBase}-${nanoid(6).toLowerCase()}`;
       if (input.tableType === "own_development" && !input.developmentName) throw new TRPCError({ code: "BAD_REQUEST", message: "Informe o nome do empreendimento próprio." });
-      await db.insert(organizations).values({ slug, name: input.name, publicName: input.publicName || input.name, logoUrl: input.logoUrl || null, contactName: input.contactName || null, contactPhone: input.contactPhone || null, tableType: input.tableType, developmentName: input.developmentName || null, developmentDescription: input.developmentDescription || null });
+      await db.insert(organizations).values({ slug, name: input.name, publicName: input.publicName || input.name, logoUrl: input.logoUrl || null, contactName: input.contactName || null, contactPhone: input.contactPhone || null, secondaryContactName: input.secondaryContactName || null, secondaryContactPhone: input.secondaryContactPhone || null, contactEmail: input.contactEmail || null, contactAddress: input.contactAddress || null, websiteUrl: input.websiteUrl || null, tableType: input.tableType, developmentName: input.developmentName || null, developmentDescription: input.developmentDescription || null });
       const [createdOrganization] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, slug)).limit(1);
       if (!createdOrganization) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível criar a construtora." });
       const organizationId = createdOrganization.id;
@@ -133,6 +153,10 @@ export const appRouter = router({
       await recordAudit(ctx, organizationId, "organization.created", "organization", organizationId, { name: input.name });
       return { id: organizationId, name: input.name, publicName: input.publicName || input.name };
     }),
+
+    update: protectedProcedure.input(z.object({ organizationId: z.number().int().positive(), name: z.string().trim().min(2).max(180), publicName: z.string().trim().max(180), logoUrl: z.string().trim().url().or(z.string().trim().startsWith("/media/")).or(z.literal("")), contactName: z.string().trim().max(180), contactPhone: z.string().trim().max(32), secondaryContactName: z.string().trim().max(180), secondaryContactPhone: z.string().trim().max(32), contactEmail: z.string().trim().email().or(z.literal("")), contactAddress: z.string().trim().max(500), websiteUrl: z.string().trim().url().or(z.literal("")), tableType: z.enum(["third_party", "own_development"]), developmentName: z.string().trim().max(180), developmentDescription: z.string().trim().max(2000) })).mutation(async ({ ctx, input }) => { await ensureOrganizationColumns(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); if (ctx.user.role !== "admin") await requireCompanyAdmin(ctx); await db.update(organizations).set({ name: input.name, publicName: input.publicName || input.name, logoUrl: input.logoUrl || null, contactName: input.contactName || null, contactPhone: input.contactPhone || null, secondaryContactName: input.secondaryContactName || null, secondaryContactPhone: input.secondaryContactPhone || null, contactEmail: input.contactEmail || null, contactAddress: input.contactAddress || null, websiteUrl: input.websiteUrl || null, tableType: input.tableType, developmentName: input.developmentName || null, developmentDescription: input.developmentDescription || null }).where(eq(organizations.id, input.organizationId)); return { success: true as const }; }),
+
+    uploadLogo: protectedProcedure.input(z.object({ fileName: z.string().trim().min(1).max(160), contentType: z.enum(["image/jpeg", "image/png", "image/webp", "image/svg+xml"]), data: z.string().min(100).max(12_000_000) })).mutation(async ({ ctx, input }) => { const bucket = getPhotosBucket(); if (!bucket) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Armazenamento indisponível." }); if (ctx.user.role !== "admin") await requireCompanyAdmin(ctx); const encoded = input.data.includes(",") ? input.data.split(",", 2)[1] : input.data; const binary = atob(encoded); const bytes = new Uint8Array(binary.length); for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index); const safeName = input.fileName.toLowerCase().replace(/[^a-z0-9.-]+/g, "-").slice(-100) || "logo.png"; const key = `organizations/${Date.now()}-${nanoid(8)}-${safeName}`; await bucket.put(key, bytes, { httpMetadata: { contentType: input.contentType, cacheControl: "public, max-age=31536000, immutable" } }); return { url: `/media/${key}` }; }),
 
     select: protectedProcedure.input(z.object({ organizationId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       await ensureOrganizationColumns();
@@ -185,6 +209,7 @@ export const appRouter = router({
   }),
 
   portal: router({
+    info: publicProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ input }) => { await ensureOrganizationColumns(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); const [organization] = await db.select().from(organizations).where(eq(organizations.slug, input.slug)).limit(1); if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." }); return { id: organization.id, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, tableType: organization.tableType, developmentName: organization.developmentName }; }),
     catalog: protectedProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ ctx, input }) => {
       await ensureOrganizationColumns();
       const db = await getDb();

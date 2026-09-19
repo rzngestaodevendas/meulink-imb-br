@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Copy, ExternalLink, Link2, LogIn, Search, ShieldCheck, UserRound, MessageCircle } from "lucide-react";
+import { Building2, Camera, Copy, ExternalLink, Eye, EyeOff, Link2, LogIn, LockKeyhole, Search, ShieldCheck, UserPlus, UserRound, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { useRoute } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -28,10 +28,24 @@ export default function BrokerPortal() {
   const [, params] = useRoute("/tabela/:slug");
   const slug = params?.slug || "";
   const { user, loading, isAuthenticated } = useAuth();
+  const info = trpc.portal.info.useQuery({ slug }, { enabled: Boolean(slug), staleTime: 60_000 });
+  const [authMode, setAuthMode] = useState<"login" | "register" | "forgot">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [creci, setCreci] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
   const [brokerName, setBrokerName] = useState(() => localStorage.getItem("meulink-broker-name") || user?.name || "");
-  const [brokerPhone, setBrokerPhone] = useState(() => localStorage.getItem("meulink-broker-phone") || "");
+  const [brokerPhone, setBrokerPhone] = useState(() => localStorage.getItem("meulink-broker-phone") || user?.whatsapp || "");
   const [search, setSearch] = useState("");
   const [links, setLinks] = useState<Record<number, string>>({});
+  const utils = trpc.useUtils();
+  const login = trpc.auth.login.useMutation({ onSuccess: () => utils.auth.me.invalidate(), onError: error => toast.error(error.message) });
+  const register = trpc.auth.register.useMutation({ onSuccess: () => utils.auth.me.invalidate(), onError: error => toast.error(error.message) });
+  const forgot = trpc.auth.forgotPassword.useMutation({ onSuccess: result => toast.success(result.message), onError: error => toast.error(error.message) });
+  const profileUpload = trpc.auth.uploadProfilePhoto.useMutation({ onError: error => toast.error(error.message) });
   const portal = trpc.portal.catalog.useQuery({ slug }, { enabled: Boolean(slug && isAuthenticated), staleTime: 15_000 });
   const createLink = trpc.catalog.createLink.useMutation({
     onSuccess: result => {
@@ -59,7 +73,7 @@ export default function BrokerPortal() {
   }
 
   if (loading) return <div className="grid min-h-screen place-items-center bg-[#f7f8fa] text-sm text-slate-500">Validando acesso...</div>;
-  if (!isAuthenticated) return <div className="grid min-h-screen place-items-center bg-[#f7f8fa] p-5"><Card className="w-full max-w-md border-0 shadow-xl"><CardHeader className="space-y-4"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#102c3d]"><LogIn className="h-5 w-5 text-[#d7b874]" /></div><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#b38b3d]">MeuLink · portal do corretor</p><CardTitle className="mt-2 text-2xl text-[#102c3d]">Acesse sua tabela</CardTitle><p className="mt-2 text-sm leading-relaxed text-slate-500">Faça login para consultar os imóveis autorizados e gerar landings com o seu nome e WhatsApp.</p></div></CardHeader><CardContent><Button onClick={() => startLogin()} className="h-11 w-full gap-2 bg-[#102c3d] hover:bg-[#173e53]"><LogIn className="h-4 w-4" /> Entrar para continuar</Button></CardContent></Card></div>;
+  if (!isAuthenticated) return <BrokerAuthCard info={info.data} mode={authMode} setMode={setAuthMode} email={email} setEmail={setEmail} password={password} setPassword={setPassword} showPassword={showPassword} setShowPassword={setShowPassword} fullName={fullName} setFullName={setFullName} creci={creci} setCreci={setCreci} whatsapp={whatsapp} setWhatsapp={setWhatsapp} profilePhotoUrl={profilePhotoUrl} setProfilePhotoUrl={setProfilePhotoUrl} onPhotoUpload={async file => { const data = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file); }); const result = await profileUpload.mutateAsync({ fileName: file.name, contentType: file.type as "image/jpeg" | "image/png" | "image/webp", data }); setProfilePhotoUrl(result.url); }} onLogin={() => login.mutate({ email, password })} onRegister={() => { const phone = whatsapp.replace(/\D/g, ""); if (!info.data) return; register.mutate({ organizationId: info.data.id, name: fullName, email, password, whatsapp: phone, creci, profilePhotoUrl }); }} onForgot={() => forgot.mutate({ email })} busy={login.isPending || register.isPending || forgot.isPending} />;
   if (portal.error) return <div className="grid min-h-screen place-items-center bg-[#f7f8fa] p-5"><Card className="w-full max-w-md border-0 shadow-xl"><CardContent className="p-8 text-center"><p className="font-semibold text-[#102c3d]">Não foi possível abrir esta tabela</p><p className="mt-2 text-sm text-slate-500">{portal.error.message}</p></CardContent></Card></div>;
 
   const organization = portal.data?.organization as PortalOrganization | undefined;
@@ -82,4 +96,36 @@ export default function BrokerPortal() {
       {!portal.isLoading && filtered.length === 0 && <div className="rounded-2xl bg-white p-10 text-center text-sm text-slate-500">Nenhum imóvel encontrado.</div>}
     </main>
   </div>;
+}
+
+
+type BrokerAuthCardProps = {
+  info?: { id: number; name: string; publicName: string | null; logoUrl: string | null; tableType: string; developmentName: string | null };
+  mode: "login" | "register" | "forgot";
+  setMode: (mode: "login" | "register" | "forgot") => void;
+  email: string; setEmail: (value: string) => void;
+  password: string; setPassword: (value: string) => void;
+  showPassword: boolean; setShowPassword: (value: boolean) => void;
+  fullName: string; setFullName: (value: string) => void;
+  creci: string; setCreci: (value: string) => void;
+  whatsapp: string; setWhatsapp: (value: string) => void;
+  profilePhotoUrl: string; setProfilePhotoUrl: (value: string) => void;
+  onPhotoUpload: (file: File) => Promise<void>;
+  onLogin: () => void; onRegister: () => void; onForgot: () => void; busy: boolean;
+};
+
+function BrokerAuthCard(props: BrokerAuthCardProps) {
+  const { info, mode, setMode, email, setEmail, password, setPassword, showPassword, setShowPassword, fullName, setFullName, creci, setCreci, whatsapp, setWhatsapp, profilePhotoUrl, setProfilePhotoUrl, onPhotoUpload, onLogin, onRegister, onForgot, busy } = props;
+  const title = mode === "register" ? "Criar acesso de corretor" : mode === "forgot" ? "Recuperar acesso" : "Entrar na tabela";
+  return <div className="min-h-screen bg-[#f7f8fa] p-4 sm:p-8"><div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-5xl items-center gap-8 lg:grid-cols-[.9fr_1.1fr]">
+    <div className="hidden rounded-3xl bg-[#102c3d] p-10 text-white shadow-xl lg:block"><div className="mb-8 grid h-20 w-20 place-items-center overflow-hidden rounded-2xl bg-white">{info?.logoUrl ? <img src={info.logoUrl} alt={`Logo ${info.name}`} className="h-full w-full object-contain" /> : <Building2 className="h-9 w-9 text-[#102c3d]" />}</div><p className="text-xs font-bold uppercase tracking-[0.22em] text-[#d7b874]">Portal exclusivo</p><h1 className="mt-4 text-4xl font-semibold tracking-tight">{info?.publicName || info?.name || "Tabela de imóveis"}</h1><p className="mt-4 text-sm leading-7 text-white/70">Acesse o estoque disponível, cadastre seus dados profissionais e compartilhe landings assinadas com seu nome e CRECI.</p><div className="mt-8 flex items-center gap-3 text-sm text-white/80"><ShieldCheck className="h-5 w-5 text-[#d7b874]" /> Ambiente profissional para corretores</div></div>
+    <Card className="border-0 shadow-xl"><CardHeader className="space-y-4"><div className="flex items-center gap-3"><div className="grid h-14 w-14 place-items-center overflow-hidden rounded-2xl bg-[#102c3d]">{info?.logoUrl ? <img src={info.logoUrl} alt="Logo" className="h-full w-full bg-white object-contain" /> : <Building2 className="h-6 w-6 text-[#d7b874]" />}</div><div><p className="text-xs font-bold uppercase tracking-[0.17em] text-[#b38b3d]">{info?.publicName || info?.name || "MeuLink"}</p><p className="mt-1 text-xs text-slate-500">{info?.developmentName || "Portal do corretor"}</p></div></div><div><CardTitle className="text-2xl text-[#102c3d]">{title}</CardTitle><p className="mt-2 text-sm leading-relaxed text-slate-500">{mode === "register" ? "Informe seus dados completos. Eles serão usados para assinar as landings compartilhadas." : mode === "forgot" ? "Digite seu e-mail. O responsável pela tabela poderá orientar a recuperação do acesso." : "Entre para visualizar somente os imóveis disponíveis desta tabela."}</p></div></CardHeader><CardContent>
+      {mode === "register" && <div className="mb-4 grid gap-4"><label className="grid gap-2 text-sm font-medium">Nome completo<Input value={fullName} onChange={event => setFullName(event.target.value)} placeholder="Nome e sobrenome" /></label><div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-2 text-sm font-medium">WhatsApp com DDI<Input value={whatsapp} onChange={event => setWhatsapp(event.target.value.replace(/\D/g, ""))} placeholder="5551999999999" inputMode="numeric" /></label><label className="grid gap-2 text-sm font-medium">Número CRECI<Input value={creci} onChange={event => setCreci(event.target.value)} placeholder="CRECI 00000-F" /></label></div><label className="grid gap-2 text-sm font-medium">Foto de perfil <span className="text-xs font-normal text-slate-500">JPG, PNG ou WEBP</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={async event => { const file = event.target.files?.[0]; if (file) await onPhotoUpload(file); }} className="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-[#102c3d] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white" />{profilePhotoUrl && <span className="text-xs text-emerald-700">Foto carregada com sucesso.</span>}</label></div>}
+      {mode !== "forgot" && <label className="mb-4 grid gap-2 text-sm font-medium">E-mail<Input type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="corretor@email.com" /></label>}
+      {mode !== "forgot" && <label className="mb-4 grid gap-2 text-sm font-medium">Senha<div className="relative"><Input type={showPassword ? "text" : "password"} value={password} onChange={event => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" className="pr-11" /> <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} className="absolute right-2 top-2 rounded-md p-1.5 text-slate-500 hover:bg-slate-100">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></label>}
+      {mode === "forgot" && <label className="mb-4 grid gap-2 text-sm font-medium">E-mail cadastrado<Input type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="corretor@email.com" /></label>}
+      <Button onClick={mode === "register" ? onRegister : mode === "forgot" ? onForgot : onLogin} disabled={busy} className="h-11 w-full gap-2 bg-[#102c3d] hover:bg-[#173e53]">{mode === "register" ? <UserPlus className="h-4 w-4" /> : mode === "forgot" ? <LockKeyhole className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}{busy ? "Aguarde..." : mode === "register" ? "Criar conta e entrar" : mode === "forgot" ? "Solicitar recuperação" : "Entrar"}</Button>
+      <div className="mt-5 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs font-semibold text-[#102c3d]">{mode !== "login" && <button type="button" onClick={() => setMode("login")} className="hover:underline">Já tenho cadastro</button>}{mode !== "register" && <button type="button" onClick={() => setMode("register")} className="hover:underline">Criar conta</button>}{mode !== "forgot" && <button type="button" onClick={() => setMode("forgot")} className="text-slate-500 hover:underline">Esqueci minha senha</button>}</div>
+    </CardContent></Card>
+  </div></div>;
 }

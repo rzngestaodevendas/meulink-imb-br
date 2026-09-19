@@ -8,6 +8,7 @@ type PhotosBucket = { put(key: string, value: Uint8Array, options?: { httpMetada
 let _db: ReturnType<typeof drizzle> | null = null;
 let _passwordColumnReady = false;
 let _organizationColumnsReady = false;
+let _brokerProfileColumnsReady = false;
 
 function getD1Binding(): D1DatabaseLike | undefined {
   return (globalThis as typeof globalThis & { __MEULINK_D1?: D1DatabaseLike }).__MEULINK_D1;
@@ -45,6 +46,11 @@ export async function ensureOrganizationColumns() {
     ["logoUrl", "TEXT"],
     ["contactName", "TEXT"],
     ["contactPhone", "TEXT"],
+    ["secondaryContactName", "TEXT"],
+    ["secondaryContactPhone", "TEXT"],
+    ["contactEmail", "TEXT"],
+    ["contactAddress", "TEXT"],
+    ["websiteUrl", "TEXT"],
     ["tableType", "TEXT NOT NULL DEFAULT 'third_party'"],
     ["developmentName", "TEXT"],
     ["developmentDescription", "TEXT"],
@@ -57,6 +63,17 @@ export async function ensureOrganizationColumns() {
     }
   }
   _organizationColumnsReady = true;
+}
+
+export async function ensureBrokerProfileColumns() {
+  if (_brokerProfileColumnsReady) return;
+  const binding = getD1Binding();
+  if (!binding) throw new Error("Database is not available");
+  for (const name of ["creci", "whatsapp", "profilePhotoUrl"]) {
+    try { await binding.prepare(`ALTER TABLE users ADD COLUMN ${name} TEXT`).run(); }
+    catch (error) { if (!String(error).toLowerCase().includes("duplicate column")) throw error; }
+  }
+  _brokerProfileColumnsReady = true;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
@@ -78,6 +95,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 }
 
 export async function getUserByOpenId(openId: string) {
+  await ensureBrokerProfileColumns();
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
@@ -85,6 +103,7 @@ export async function getUserByOpenId(openId: string) {
 }
 
 export async function getUserByEmail(email: string) {
+  await ensureBrokerProfileColumns();
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.email, email)).limit(1);

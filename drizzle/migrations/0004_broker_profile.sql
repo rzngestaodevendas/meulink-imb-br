@@ -1,0 +1,3 @@
+ALTER TABLE users ADD COLUMN creci TEXT;
+ALTER TABLE users ADD COLUMN whatsapp TEXT;
+ALTER TABLE users ADD COLUMN profilePhotoUrl TEXT;
