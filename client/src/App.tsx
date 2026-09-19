@@ -37,6 +37,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={PublicProperty} />
+      <Route path="/imovel/:code" component={PublicProperty} />
       <Route path="/tabela/:slug" component={BrokerPortal} />
       <Route path="/painelgestao" component={ProtectedApp} />
       <Route path="/painelgestao/imoveis" component={ProtectedProperties} />

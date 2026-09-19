@@ -34,6 +34,7 @@ export const auditActionSchema = z.enum(["organization.created", "organization.s
 function parseProperty(row: typeof properties.$inferSelect, includeInternal = true) {
   return {
     id: row.id,
+    code: `ML-${String(row.id).padStart(6, "0")}`,
     slug: row.slug,
     title: row.title,
     address: row.address,
