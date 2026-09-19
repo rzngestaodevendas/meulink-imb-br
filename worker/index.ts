@@ -13,6 +13,23 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "meulink-api", runtime: "cloudflare-workers" });
 });
 
+const photos = (env as unknown as { PHOTOS: R2Bucket }).PHOTOS;
+app.get("/media/*", async (req, res) => {
+  const key = req.path.slice("/media/".length);
+  if (!key || key.includes("..")) {
+    res.status(400).json({ error: "Invalid media key" });
+    return;
+  }
+  const object = await photos.get(key);
+  if (!object) {
+    res.status(404).end();
+    return;
+  }
+  res.setHeader("Content-Type", object.httpMetadata?.contentType ?? "image/jpeg");
+  res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  res.send(Buffer.from(await object.arrayBuffer()));
+});
+
 registerOAuthRoutes(app);
 app.use(
   "/api/trpc",
