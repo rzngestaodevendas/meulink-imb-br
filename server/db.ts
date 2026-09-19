@@ -5,6 +5,7 @@ import { ENV } from "./_core/env";
 
 type D1DatabaseLike = Parameters<typeof drizzle>[0];
 let _db: ReturnType<typeof drizzle> | null = null;
+let _passwordColumnReady = false;
 
 function getD1Binding(): D1DatabaseLike | undefined {
   return (globalThis as typeof globalThis & { __MEULINK_D1?: D1DatabaseLike }).__MEULINK_D1;
@@ -16,6 +17,18 @@ export async function getDb() {
     if (binding) _db = drizzle(binding);
   }
   return _db;
+}
+
+export async function ensurePasswordColumn() {
+  if (_passwordColumnReady) return;
+  const binding = getD1Binding();
+  if (!binding) throw new Error("Database is not available");
+  try {
+    await binding.prepare("ALTER TABLE users ADD COLUMN passwordHash TEXT").run();
+  } catch (error) {
+    if (!String(error).toLowerCase().includes("duplicate column")) throw error;
+  }
+  _passwordColumnReady = true;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
@@ -41,6 +54,19 @@ export async function getUserByOpenId(openId: string) {
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result[0];
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result[0];
+}
+
+export async function setUserPasswordHash(userId: number, passwordHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db.update(users).set({ passwordHash, loginMethod: "email" }).where(eq(users.id, userId));
 }
 
 export async function getOrganizationForUser(userId: number, openId: string, role: string, selectedOrganizationId?: number) {

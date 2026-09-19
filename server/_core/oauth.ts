@@ -4,6 +4,7 @@ import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
+import { verifyPassword } from "./password";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -11,6 +12,32 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 export function registerOAuthRoutes(app: Express) {
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    const password = typeof req.body?.password === "string" ? req.body.password : "";
+    if (!email || !password) {
+      res.status(400).json({ error: "E-mail e senha são obrigatórios." });
+      return;
+    }
+
+    try {
+      const user = await db.getUserByEmail(email);
+      const valid = Boolean(user?.passwordHash && await verifyPassword(password, user.passwordHash));
+      if (!user || !valid) {
+        res.status(401).json({ error: "E-mail ou senha inválidos." });
+        return;
+      }
+
+      const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name || email, expiresInMs: ONE_YEAR_MS });
+      const cookieOptions = getSessionCookieOptions(req);
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      res.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    } catch (error) {
+      console.error("[Auth] Password login failed", error);
+      res.status(500).json({ error: "Não foi possível iniciar a sessão." });
+    }
+  });
+
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");

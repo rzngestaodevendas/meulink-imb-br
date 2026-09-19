@@ -7,7 +7,22 @@ import { createContext } from "../server/_core/context";
 import { registerOAuthRoutes } from "../server/_core/oauth";
 
 const app = express();
-app.use(express.json({ limit: "2mb" }));
+app.use((req, _res, next) => {
+  if (req.method === "GET" || req.method === "HEAD" || !req.headers["content-type"]?.includes("application/json")) {
+    next();
+    return;
+  }
+  const chunks: Buffer[] = [];
+  req.on("data", chunk => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+  req.on("end", () => {
+    try {
+      req.body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+      next();
+    } catch {
+      _res.status(400).json({ error: "JSON inválido" });
+    }
+  });
+});
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "meulink-api", runtime: "cloudflare-workers" });

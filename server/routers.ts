@@ -2,12 +2,15 @@ import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { organizationInvites, organizationMembers, organizations, properties, shareLinks, users } from "../drizzle/schema";
-import { getAuditLogs, getDb, getOrganizationForUser, writeAuditLog } from "./db";
+import { ensurePasswordColumn, getAuditLogs, getDb, getOrganizationForUser, getUserByEmail, writeAuditLog } from "./db";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { and, eq, isNull, like, or } from "drizzle-orm";
+import { hashPassword, verifyPassword } from "./_core/password";
+import { sdk } from "./_core/sdk";
+import { ENV } from "./_core/env";
 
 const propertyInput = z.object({ search: z.string().trim().optional() });
 const statusSchema = z.enum(["available", "reserved", "sold", "unavailable", "updating", "hidden"]);
@@ -62,6 +65,36 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    login: publicProcedure.input(z.object({ email: z.string().trim().email(), password: z.string().min(8).max(200) })).mutation(async ({ ctx, input }) => {
+      await ensurePasswordColumn();
+      const normalizedEmail = input.email.toLowerCase();
+      let user = await getUserByEmail(normalizedEmail);
+      const isConfiguredAdmin = Boolean(ENV.adminEmail && ENV.adminPassword && normalizedEmail === ENV.adminEmail.toLowerCase() && input.password === ENV.adminPassword);
+      if (!user && isConfiguredAdmin) {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+        const passwordHash = await hashPassword(input.password);
+        const openId = `email:${normalizedEmail}`;
+        await db.insert(users).values({ openId, name: "Felipe", email: normalizedEmail, passwordHash, loginMethod: "email", role: "admin" });
+        user = await getUserByEmail(normalizedEmail);
+        const [organization] = await db.select().from(organizations).limit(1);
+        if (user && organization) {
+          await db.insert(organizationMembers).values({ organizationId: organization.id, userId: user.id, role: "company_admin" });
+          await db.update(users).set({ activeOrganizationId: organization.id }).where(eq(users.id, user.id));
+        }
+      } else if (user && isConfiguredAdmin && !user.passwordHash) {
+        const db = await getDb();
+        if (db) {
+          await db.update(users).set({ passwordHash: await hashPassword(input.password), loginMethod: "email", role: "admin" }).where(eq(users.id, user.id));
+          user = await getUserByEmail(normalizedEmail);
+        }
+      }
+      const valid = Boolean(user?.passwordHash && await verifyPassword(input.password, user.passwordHash));
+      if (!user || !valid) throw new TRPCError({ code: "UNAUTHORIZED", message: "E-mail ou senha inválidos." });
+      const token = await sdk.createSessionToken(user.openId, { name: user.name || user.email || "Usuário" });
+      ctx.res.cookie(COOKIE_NAME, token, { ...getSessionCookieOptions(ctx.req), maxAge: 365 * 24 * 60 * 60 * 1000 });
+      return { success: true as const };
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
