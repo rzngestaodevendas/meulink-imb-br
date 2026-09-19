@@ -56,6 +56,7 @@ function Router() {
       <Route path="/app/auditoria" component={ProtectedAuditLog} />
       <Route path="/app/construtoras" component={ProtectedOrganizations} />
       <Route path="/app/usuarios" component={ProtectedAdminUsers} />
+      <Route path="/:slug" component={BrokerPortal} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

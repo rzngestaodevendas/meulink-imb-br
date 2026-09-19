@@ -26,7 +26,8 @@ type PortalOrganization = { name: string; publicName: string | null; logoUrl: st
 
 export default function BrokerPortal() {
   const [, params] = useRoute("/tabela/:slug");
-  const slug = params?.slug || "";
+  const [, friendlyParams] = useRoute("/:slug");
+  const slug = params?.slug || friendlyParams?.slug || "";
   const { user, loading, isAuthenticated } = useAuth();
   const info = trpc.portal.info.useQuery({ slug }, { enabled: Boolean(slug), staleTime: 60_000 });
   const [authMode, setAuthMode] = useState<"login" | "register" | "forgot">("login");
