@@ -1,0 +1,20 @@
+name = "meulink-api"
+main = "worker/index.ts"
+compatibility_date = "2026-09-19"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "dist/public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "meulink-db"
+database_id = "f656a6d8-8b5f-4f21-9d14-99ce2ed7b440"
+
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "meulink-fotos"
+
+[vars]
+NODE_ENV = "production"
