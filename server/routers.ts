@@ -88,8 +88,10 @@ export const appRouter = router({
       }
       const slugBase = input.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100) || "construtora";
       const slug = `${slugBase}-${nanoid(6).toLowerCase()}`;
-      const [result] = await db.insert(organizations).values({ slug, name: input.name, publicName: input.publicName || input.name });
-      const organizationId = Number(result.insertId);
+      await db.insert(organizations).values({ slug, name: input.name, publicName: input.publicName || input.name });
+      const [createdOrganization] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, slug)).limit(1);
+      if (!createdOrganization) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível criar a construtora." });
+      const organizationId = createdOrganization.id;
       await db.insert(organizationMembers).values({ organizationId, userId: ctx.user.id, role: "company_admin" });
       await db.update(users).set({ activeOrganizationId: organizationId }).where(eq(users.id, ctx.user.id));
       await recordAudit(ctx, organizationId, "organization.created", "organization", organizationId, { name: input.name });
@@ -163,8 +165,8 @@ export const appRouter = router({
       const scope = await requireCompanyAdmin(ctx);
       const baseSlug = input.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 150) || `imovel-${nanoid(8)}`;
       const slug = `${baseSlug}-${nanoid(5).toLowerCase()}`;
-      const [result] = await db.insert(properties).values({ organizationId: scope.organizationId, slug, title: input.title, address: input.address, responsibleName: input.responsibleName, responsiblePhone: input.responsiblePhone, details: JSON.stringify(input.details), price: input.price, notes: input.notes, photos: JSON.stringify(input.photos), status: input.status, publicEnabled: input.publicEnabled ? 1 : 0 });
-      const [created] = await db.select().from(properties).where(eq(properties.id, Number(result.insertId))).limit(1);
+      await db.insert(properties).values({ organizationId: scope.organizationId, slug, title: input.title, address: input.address, responsibleName: input.responsibleName, responsiblePhone: input.responsiblePhone, details: JSON.stringify(input.details), price: input.price, notes: input.notes, photos: JSON.stringify(input.photos), status: input.status, publicEnabled: input.publicEnabled ? 1 : 0 });
+      const [created] = await db.select().from(properties).where(and(eq(properties.organizationId, scope.organizationId), eq(properties.slug, slug))).limit(1);
       if (!created) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível carregar o imóvel criado." });
       await recordAudit(ctx, scope.organizationId, "property.created", "property", created.id, { title: created.title });
       return parseProperty(created);

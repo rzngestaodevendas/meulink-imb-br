@@ -1,103 +1,107 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, tinyint, uniqueIndex, varchar, index } from "drizzle-orm/mysql-core";
+import { integer, sqliteTable, text, uniqueIndex, index } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
+const timestamp = (name: string) => integer(name, { mode: "timestamp_ms" }).notNull().default(sql`(unixepoch() * 1000)`);
+const nullableTimestamp = (name: string) => integer(name, { mode: "timestamp_ms" });
+
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  openId: text("openId").notNull().unique(),
   name: text("name"),
-  email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  activeOrganizationId: int("activeOrganizationId"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  email: text("email"),
+  loginMethod: text("loginMethod"),
+  role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
+  activeOrganizationId: integer("activeOrganizationId"),
+  createdAt: timestamp("createdAt"),
+  updatedAt: timestamp("updatedAt"),
+  lastSignedIn: timestamp("lastSignedIn"),
 });
 
-export const organizations = mysqlTable("organizations", {
-  id: int("id").autoincrement().primaryKey(),
-  slug: varchar("slug", { length: 120 }).notNull().unique(),
-  name: varchar("name", { length: 180 }).notNull(),
-  publicName: varchar("publicName", { length: 180 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+export const organizations = sqliteTable("organizations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  publicName: text("publicName"),
+  createdAt: timestamp("createdAt"),
+  updatedAt: timestamp("updatedAt"),
 });
 
-export const organizationMembers = mysqlTable("organizationMembers", {
-  id: int("id").autoincrement().primaryKey(),
-  organizationId: int("organizationId").notNull(),
-  userId: int("userId").notNull(),
-  role: mysqlEnum("role", ["company_admin", "broker"]).default("broker").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+export const organizationMembers = sqliteTable("organizationMembers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  organizationId: integer("organizationId").notNull(),
+  userId: integer("userId").notNull(),
+  role: text("role", { enum: ["company_admin", "broker"] }).notNull().default("broker"),
+  createdAt: timestamp("createdAt"),
 }, table => ({
   organizationUserUnique: uniqueIndex("organization_user_unique").on(table.organizationId, table.userId),
   userIndex: index("organization_member_user_idx").on(table.userId),
 }));
 
-export const organizationInvites = mysqlTable("organizationInvites", {
-  id: int("id").autoincrement().primaryKey(),
-  organizationId: int("organizationId").notNull(),
-  email: varchar("email", { length: 320 }).notNull(),
-  role: mysqlEnum("role", ["company_admin", "broker"]).default("broker").notNull(),
-  token: varchar("token", { length: 80 }).notNull().unique(),
-  invitedBy: int("invitedBy").notNull(),
-  expiresAt: timestamp("expiresAt").notNull(),
-  acceptedAt: timestamp("acceptedAt"),
-  revokedAt: timestamp("revokedAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+export const organizationInvites = sqliteTable("organizationInvites", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  organizationId: integer("organizationId").notNull(),
+  email: text("email").notNull(),
+  role: text("role", { enum: ["company_admin", "broker"] }).notNull().default("broker"),
+  token: text("token").notNull().unique(),
+  invitedBy: integer("invitedBy").notNull(),
+  expiresAt: integer("expiresAt", { mode: "timestamp_ms" }).notNull(),
+  acceptedAt: nullableTimestamp("acceptedAt"),
+  revokedAt: nullableTimestamp("revokedAt"),
+  createdAt: timestamp("createdAt"),
 }, table => ({
   organizationIndex: index("organization_invite_organization_idx").on(table.organizationId),
   emailIndex: index("organization_invite_email_idx").on(table.email),
 }));
 
-export const auditLogs = mysqlTable("auditLogs", {
-  id: int("id").autoincrement().primaryKey(),
-  organizationId: int("organizationId").notNull(),
-  actorUserId: int("actorUserId").notNull(),
-  action: varchar("action", { length: 80 }).notNull(),
-  entityType: varchar("entityType", { length: 80 }).notNull(),
-  entityId: int("entityId"),
+export const auditLogs = sqliteTable("auditLogs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  organizationId: integer("organizationId").notNull(),
+  actorUserId: integer("actorUserId").notNull(),
+  action: text("action").notNull(),
+  entityType: text("entityType").notNull(),
+  entityId: integer("entityId"),
   metadata: text("metadata"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt"),
 }, table => ({
   organizationIndex: index("audit_log_organization_idx").on(table.organizationId),
   createdIndex: index("audit_log_created_idx").on(table.createdAt),
 }));
 
-export const properties = mysqlTable("properties", {
-  id: int("id").autoincrement().primaryKey(),
-  organizationId: int("organizationId").notNull(),
-  slug: varchar("slug", { length: 180 }).notNull(),
-  title: varchar("title", { length: 240 }).notNull(),
+export const properties = sqliteTable("properties", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  organizationId: integer("organizationId").notNull(),
+  slug: text("slug").notNull(),
+  title: text("title").notNull(),
   address: text("address"),
-  responsibleName: varchar("responsibleName", { length: 180 }),
-  responsiblePhone: varchar("responsiblePhone", { length: 32 }),
+  responsibleName: text("responsibleName"),
+  responsiblePhone: text("responsiblePhone"),
   details: text("details").notNull(),
-  price: varchar("price", { length: 80 }),
+  price: text("price"),
   notes: text("notes"),
   photos: text("photos").notNull(),
   sourceDriveUrl: text("sourceDriveUrl"),
-  sourcePage: int("sourcePage"),
-  status: mysqlEnum("status", ["available", "reserved", "sold", "unavailable", "updating", "hidden"]).default("available").notNull(),
-  publicEnabled: tinyint("publicEnabled").default(1).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  sourcePage: integer("sourcePage"),
+  status: text("status", { enum: ["available", "reserved", "sold", "unavailable", "updating", "hidden"] }).notNull().default("available"),
+  publicEnabled: integer("publicEnabled").notNull().default(1),
+  createdAt: timestamp("createdAt"),
+  updatedAt: timestamp("updatedAt"),
 }, table => ({
   organizationSlugUnique: uniqueIndex("organization_property_slug_unique").on(table.organizationId, table.slug),
   organizationIndex: index("property_organization_idx").on(table.organizationId),
 }));
 
-export const shareLinks = mysqlTable("shareLinks", {
-  id: int("id").autoincrement().primaryKey(),
-  organizationId: int("organizationId").notNull(),
-  propertyId: int("propertyId").notNull(),
-  token: varchar("token", { length: 80 }).notNull().unique(),
-  brokerName: varchar("brokerName", { length: 180 }).notNull(),
-  brokerPhone: varchar("brokerPhone", { length: 32 }).notNull(),
-  enabled: tinyint("enabled").default(1).notNull(),
-  clickCount: int("clickCount").default(0).notNull(),
-  createdBy: int("createdBy").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  disabledAt: timestamp("disabledAt"),
+export const shareLinks = sqliteTable("shareLinks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  organizationId: integer("organizationId").notNull(),
+  propertyId: integer("propertyId").notNull(),
+  token: text("token").notNull().unique(),
+  brokerName: text("brokerName").notNull(),
+  brokerPhone: text("brokerPhone").notNull(),
+  enabled: integer("enabled").notNull().default(1),
+  clickCount: integer("clickCount").notNull().default(0),
+  createdBy: integer("createdBy").notNull(),
+  createdAt: timestamp("createdAt"),
+  disabledAt: nullableTimestamp("disabledAt"),
 }, table => ({
   organizationIndex: index("share_link_organization_idx").on(table.organizationId),
   propertyIndex: index("share_link_property_idx").on(table.propertyId),

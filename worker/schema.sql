@@ -8,9 +8,9 @@ CREATE TABLE IF NOT EXISTS users (
   loginMethod TEXT,
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   activeOrganizationId INTEGER,
-  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  lastSignedIn TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  createdAt INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
+  updatedAt INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
+  lastSignedIn INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
 );
 
 CREATE TABLE IF NOT EXISTS organizations (
@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS organizations (
   slug TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   publicName TEXT,
-  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  createdAt INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
+  updatedAt INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
 );
 
 CREATE TABLE IF NOT EXISTS organizationMembers (
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS organizationMembers (
   organizationId INTEGER NOT NULL,
   userId INTEGER NOT NULL,
   role TEXT NOT NULL DEFAULT 'broker' CHECK (role IN ('company_admin', 'broker')),
-  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  createdAt INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   FOREIGN KEY (organizationId) REFERENCES organizations(id),
   FOREIGN KEY (userId) REFERENCES users(id),
   UNIQUE (organizationId, userId)
@@ -41,10 +41,10 @@ CREATE TABLE IF NOT EXISTS organizationInvites (
   role TEXT NOT NULL DEFAULT 'broker' CHECK (role IN ('company_admin', 'broker')),
   token TEXT NOT NULL UNIQUE,
   invitedBy INTEGER NOT NULL,
-  expiresAt TEXT NOT NULL,
-  acceptedAt TEXT,
-  revokedAt TEXT,
-  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expiresAt INTEGER NOT NULL,
+  acceptedAt INTEGER,
+  revokedAt INTEGER,
+  createdAt INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   FOREIGN KEY (organizationId) REFERENCES organizations(id),
   FOREIGN KEY (invitedBy) REFERENCES users(id)
 );
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS auditLogs (
   entityType TEXT NOT NULL,
   entityId INTEGER,
   metadata TEXT,
-  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  createdAt INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   FOREIGN KEY (organizationId) REFERENCES organizations(id),
   FOREIGN KEY (actorUserId) REFERENCES users(id)
 );
@@ -82,8 +82,8 @@ CREATE TABLE IF NOT EXISTS properties (
   sourcePage INTEGER,
   status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'reserved', 'sold', 'unavailable', 'updating', 'hidden')),
   publicEnabled INTEGER NOT NULL DEFAULT 1,
-  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  createdAt INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
+  updatedAt INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   FOREIGN KEY (organizationId) REFERENCES organizations(id),
   UNIQUE (organizationId, slug)
 );
@@ -99,8 +99,8 @@ CREATE TABLE IF NOT EXISTS shareLinks (
   enabled INTEGER NOT NULL DEFAULT 1,
   clickCount INTEGER NOT NULL DEFAULT 0,
   createdBy INTEGER NOT NULL,
-  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  disabledAt TEXT,
+  createdAt INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
+  disabledAt INTEGER,
   FOREIGN KEY (organizationId) REFERENCES organizations(id),
   FOREIGN KEY (propertyId) REFERENCES properties(id),
   FOREIGN KEY (createdBy) REFERENCES users(id)
