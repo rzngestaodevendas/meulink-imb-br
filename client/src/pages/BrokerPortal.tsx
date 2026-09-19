@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Camera, Copy, ExternalLink, Eye, EyeOff, Link2, LogIn, LockKeyhole, Search, ShieldCheck, UserPlus, UserRound, MessageCircle } from "lucide-react";
-import { useState } from "react";
+import { Building2, Camera, Copy, ExternalLink, Eye, EyeOff, Link2, LogIn, LockKeyhole, Save, Search, ShieldCheck, UserPlus, UserRound, MessageCircle } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
@@ -41,11 +41,17 @@ export default function BrokerPortal() {
   const [brokerPhone, setBrokerPhone] = useState(() => localStorage.getItem("meulink-broker-phone") || user?.whatsapp || "");
   const [search, setSearch] = useState("");
   const [links, setLinks] = useState<Record<number, string>>({});
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [profileWhatsapp, setProfileWhatsapp] = useState("");
+  const [profileCreci, setProfileCreci] = useState("");
+  const [profilePhoto, setProfilePhoto] = useState("");
   const utils = trpc.useUtils();
   const login = trpc.auth.login.useMutation({ onSuccess: () => utils.auth.me.invalidate(), onError: error => toast.error(error.message) });
   const register = trpc.auth.register.useMutation({ onSuccess: () => utils.auth.me.invalidate(), onError: error => toast.error(error.message) });
   const forgot = trpc.auth.forgotPassword.useMutation({ onSuccess: result => toast.success(result.message), onError: error => toast.error(error.message) });
   const profileUpload = trpc.auth.uploadProfilePhoto.useMutation({ onError: error => toast.error(error.message) });
+  const updateProfile = trpc.auth.updateProfile.useMutation({ onSuccess: async () => { await utils.auth.me.invalidate(); setEditingProfile(false); toast.success("Perfil atualizado"); }, onError: error => toast.error(error.message) });
   const portal = trpc.portal.catalog.useQuery({ slug }, { enabled: Boolean(slug && isAuthenticated), staleTime: 15_000 });
   const createLink = trpc.catalog.createLink.useMutation({
     onSuccess: result => {
@@ -55,6 +61,7 @@ export default function BrokerPortal() {
     },
     onError: error => toast.error(error.message),
   });
+  useEffect(() => { if (user) { setProfileName(user.name || ""); setProfileWhatsapp(user.whatsapp || ""); setProfileCreci(user.creci || ""); setProfilePhoto(user.profilePhotoUrl || ""); setBrokerName(user.name || ""); setBrokerPhone(user.whatsapp || ""); } }, [user]);
 
   function generate(propertyId: number) {
     const phone = brokerPhone.replace(/\D/g, "");
@@ -88,7 +95,7 @@ export default function BrokerPortal() {
         </div>
       </header>
 
-      <Card className="mb-6 border-0 shadow-sm"><CardContent className="grid gap-4 p-5 lg:grid-cols-[1fr_1fr_1.1fr] lg:items-end"><label className="grid gap-2 text-sm font-medium text-slate-700"><span className="flex items-center gap-2"><UserRound className="h-4 w-4 text-[#b38b3d]" /> Seu nome</span><Input value={brokerName} onChange={event => setBrokerName(event.target.value)} placeholder="Nome do corretor" className="h-11" /></label><label className="grid gap-2 text-sm font-medium text-slate-700">Seu WhatsApp<Input value={brokerPhone} onChange={event => setBrokerPhone(event.target.value)} placeholder="5551999999999" inputMode="numeric" className="h-11" /></label><div className="rounded-xl bg-[#f6f1e7] p-3 text-xs leading-relaxed text-slate-600">{organization?.contactName ? `Responsável pela tabela: ${organization.contactName}${organization.contactPhone ? ` · ${organization.contactPhone}` : ""}. ` : ""}Os seus dados serão exibidos somente na landing que você gerar. Os dados do responsável pelo imóvel permanecem internos.</div></CardContent></Card>
+      <Card className="mb-6 border-0 shadow-sm"><CardContent className="p-5"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-4"><div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border-4 border-[#d7b874] bg-[#102c3d] text-xl font-bold text-white">{(user?.profilePhotoUrl || profilePhoto) ? <img src={user?.profilePhotoUrl || profilePhoto} alt={`Foto de ${user?.name || "corretor"}`} className="h-full w-full object-cover" /> : (user?.name || "C").split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase()}</div><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#b38b3d]">Seu perfil profissional</p><h2 className="mt-1 text-xl font-semibold text-[#102c3d]">{user?.name || "Corretor"}</h2><p className="text-sm text-slate-500">{user?.email || "E-mail não informado"}</p><div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-600"><span className="rounded-full bg-slate-100 px-3 py-1">WhatsApp: {user?.whatsapp || "Não informado"}</span><span className="rounded-full bg-slate-100 px-3 py-1">CRECI: {user?.creci || "Não informado"}</span></div></div></div><Button variant="outline" onClick={() => { setProfileName(user?.name || ""); setProfileWhatsapp(user?.whatsapp || ""); setProfileCreci(user?.creci || ""); setProfilePhoto(user?.profilePhotoUrl || ""); setEditingProfile(current => !current); }} className="gap-2"><UserRound className="h-4 w-4" /> {editingProfile ? "Fechar edição" : "Editar meu perfil"}</Button></div>{editingProfile && <div className="mt-5 grid gap-4 border-t border-slate-100 pt-5"><div className="grid gap-4 md:grid-cols-3"><label className="grid gap-2 text-sm font-medium text-slate-700">Nome completo<Input value={profileName} onChange={event => setProfileName(event.target.value)} /></label><label className="grid gap-2 text-sm font-medium text-slate-700">WhatsApp<Input value={profileWhatsapp} onChange={event => setProfileWhatsapp(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder="5551999999999" /></label><label className="grid gap-2 text-sm font-medium text-slate-700">CRECI<Input value={profileCreci} onChange={event => setProfileCreci(event.target.value)} placeholder="CRECI 00000-F" /></label></div><label className="grid gap-2 text-sm font-medium text-slate-700">Alterar foto de perfil<input type="file" accept="image/jpeg,image/png,image/webp" onChange={async event => { const file = event.target.files?.[0]; if (!file) return; const data = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file); }); const result = await profileUpload.mutateAsync({ fileName: file.name, contentType: file.type as "image/jpeg" | "image/png" | "image/webp", data }); setProfilePhoto(result.url); }} className="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-[#102c3d] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white" /></label><div className="flex justify-end"><Button onClick={() => updateProfile.mutate({ name: profileName.trim(), whatsapp: profileWhatsapp.replace(/\D/g, ""), creci: profileCreci.trim(), profilePhotoUrl: profilePhoto })} disabled={updateProfile.isPending || profileUpload.isPending} className="gap-2 bg-[#102c3d] hover:bg-[#173e53]"><Save className="h-4 w-4" /> {updateProfile.isPending ? "Salvando..." : "Salvar meu perfil"}</Button></div></div>}<div className="mt-5 rounded-xl bg-[#f6f1e7] p-3 text-xs leading-relaxed text-slate-600">{organization?.contactName ? `Responsável pela tabela: ${organization.contactName}${organization.contactPhone ? ` · ${organization.contactPhone}` : ""}. ` : ""}Seus dados aparecem na assinatura das landings que você compartilhar. Os dados internos dos imóveis permanecem protegidos.</div></CardContent></Card>
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm text-slate-500">{properties.length} imóveis disponíveis</p><h2 className="text-xl font-semibold text-[#102c3d]">Estoque autorizado</h2></div><div className="relative w-full sm:max-w-sm"><Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" /><Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar imóvel ou valor" className="h-10 bg-white pl-9" /></div></div>
       {portal.isLoading && <div className="rounded-2xl bg-white p-10 text-center text-sm text-slate-500">Carregando tabela...</div>}
