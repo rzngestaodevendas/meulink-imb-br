@@ -64,7 +64,7 @@ export default function BrokerPortal() {
     }
     localStorage.setItem("meulink-broker-name", brokerName.trim());
     localStorage.setItem("meulink-broker-phone", phone);
-    createLink.mutate({ propertyId, organizationId: portal.data?.organization.id, brokerName: brokerName.trim(), brokerPhone: phone });
+    createLink.mutate({ propertyId, organizationId: portal.data?.organization.id, brokerName: brokerName.trim(), brokerPhone: phone, brokerPhotoUrl: user?.profilePhotoUrl || "" });
   }
 
   async function copy(url: string) {

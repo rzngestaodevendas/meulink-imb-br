@@ -112,6 +112,7 @@ export const shareLinks = sqliteTable("shareLinks", {
   token: text("token").notNull().unique(),
   brokerName: text("brokerName").notNull(),
   brokerPhone: text("brokerPhone").notNull(),
+  brokerPhotoUrl: text("brokerPhotoUrl"),
   enabled: integer("enabled").notNull().default(1),
   clickCount: integer("clickCount").notNull().default(0),
   createdBy: integer("createdBy").notNull(),

@@ -9,6 +9,7 @@ let _db: ReturnType<typeof drizzle> | null = null;
 let _passwordColumnReady = false;
 let _organizationColumnsReady = false;
 let _brokerProfileColumnsReady = false;
+let _shareLinkColumnsReady = false;
 
 function getD1Binding(): D1DatabaseLike | undefined {
   return (globalThis as typeof globalThis & { __MEULINK_D1?: D1DatabaseLike }).__MEULINK_D1;
@@ -74,6 +75,15 @@ export async function ensureBrokerProfileColumns() {
     catch (error) { if (!String(error).toLowerCase().includes("duplicate column")) throw error; }
   }
   _brokerProfileColumnsReady = true;
+}
+
+export async function ensureShareLinkColumns() {
+  if (_shareLinkColumnsReady) return;
+  const binding = getD1Binding();
+  if (!binding) throw new Error("Database is not available");
+  try { await binding.prepare("ALTER TABLE shareLinks ADD COLUMN brokerPhotoUrl TEXT").run(); }
+  catch (error) { if (!String(error).toLowerCase().includes("duplicate column")) throw error; }
+  _shareLinkColumnsReady = true;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
