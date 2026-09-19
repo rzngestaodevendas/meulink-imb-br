@@ -20,7 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Building2, ClipboardList, Factory, LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { Building2, ClipboardList, Factory, LayoutDashboard, LogOut, PanelLeft, Users, UserCog } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -33,6 +33,7 @@ const menuItems = [
   { icon: Users, label: "Equipe", path: "/painelgestao/equipe" },
   { icon: ClipboardList, label: "Auditoria", path: "/painelgestao/auditoria" },
   { icon: Factory, label: "Construtoras", path: "/painelgestao/construtoras" },
+  { icon: UserCog, label: "Usuários", path: "/painelgestao/usuarios", adminOnly: true },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -161,7 +162,7 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
+              {menuItems.filter(item => !item.adminOnly || user?.role === "admin").map(item => {
                 const isActive = location === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>

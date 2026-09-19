@@ -12,6 +12,7 @@ import Team from "./pages/Team";
 import AuditLog from "./pages/AuditLog";
 import Organizations from "./pages/Organizations";
 import BrokerPortal from "./pages/BrokerPortal";
+import AdminUsers from "./pages/AdminUsers";
 
 function ProtectedApp() {
   return <DashboardLayout><Home /></DashboardLayout>;
@@ -33,6 +34,10 @@ function ProtectedOrganizations() {
   return <DashboardLayout><Organizations /></DashboardLayout>;
 }
 
+function ProtectedAdminUsers() {
+  return <DashboardLayout><AdminUsers /></DashboardLayout>;
+}
+
 function Router() {
   return (
     <Switch>
@@ -44,11 +49,13 @@ function Router() {
       <Route path="/painelgestao/equipe" component={ProtectedTeam} />
       <Route path="/painelgestao/auditoria" component={ProtectedAuditLog} />
       <Route path="/painelgestao/construtoras" component={ProtectedOrganizations} />
+      <Route path="/painelgestao/usuarios" component={ProtectedAdminUsers} />
       <Route path="/app" component={ProtectedApp} />
       <Route path="/app/imoveis" component={ProtectedProperties} />
       <Route path="/app/equipe" component={ProtectedTeam} />
       <Route path="/app/auditoria" component={ProtectedAuditLog} />
       <Route path="/app/construtoras" component={ProtectedOrganizations} />
+      <Route path="/app/usuarios" component={ProtectedAdminUsers} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

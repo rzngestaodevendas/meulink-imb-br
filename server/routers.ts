@@ -171,6 +171,18 @@ export const appRouter = router({
     }),
   }),
 
+  admin: router({
+    users: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Esta área é exclusiva do administrador do painel." });
+      await ensureBrokerProfileColumns(); await ensureOrganizationColumns();
+      const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const rows = await db.select({ id: users.id, name: users.name, email: users.email, whatsapp: users.whatsapp, creci: users.creci, profilePhotoUrl: users.profilePhotoUrl, role: users.role, createdAt: users.createdAt, organizationId: organizationMembers.organizationId, organizationName: organizations.name, memberRole: organizationMembers.role }).from(users).leftJoin(organizationMembers, eq(organizationMembers.userId, users.id)).leftJoin(organizations, eq(organizationMembers.organizationId, organizations.id)).orderBy(users.createdAt);
+      const grouped = new Map<number, { id: number; name: string | null; email: string | null; whatsapp: string | null; creci: string | null; profilePhotoUrl: string | null; role: string; createdAt: Date; organizations: { id: number; name: string; role: string }[] }>();
+      for (const row of rows) { const current = grouped.get(row.id) || { id: row.id, name: row.name, email: row.email, whatsapp: row.whatsapp, creci: row.creci, profilePhotoUrl: row.profilePhotoUrl, role: row.role, createdAt: row.createdAt, organizations: [] }; if (row.organizationId && row.organizationName) current.organizations.push({ id: row.organizationId, name: row.organizationName, role: row.memberRole || "broker" }); grouped.set(row.id, current); }
+      return Array.from(grouped.values());
+    }),
+  }),
+
   catalog: router({
     list: protectedProcedure.input(propertyInput.optional()).query(async ({ ctx, input }) => {
       const db = await getDb();
