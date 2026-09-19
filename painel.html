@@ -1,0 +1,155 @@
+<!-- painel.html — USO INTERNO DO CORRETOR
+     Funciona em GitHub Pages em user-site e project-site.
+     Apenas o corretor usa este arquivo; o cliente final NUNCA vê este link. -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Painel de Imóveis — Uso Interno</title>
+<style>
+:root{--azul:#0F3D5E;--dourado:#C9A24B;--verde:#25D366;--bg:#F2F4F7}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:#222;padding:18px}
+header{background:var(--azul);color:#fff;padding:18px;border-radius:14px;margin-bottom:16px}
+header h1{font-size:1.2rem}
+header p{font-size:.8rem;opacity:.85;margin-top:4px}
+.config{background:#fff;border-radius:14px;padding:16px;box-shadow:0 3px 12px rgba(15,61,94,.08);margin-bottom:16px}
+.config h2{font-size:.95rem;color:var(--azul);margin-bottom:10px}
+.campos{display:flex;gap:12px;flex-wrap:wrap}
+.campo{flex:1;min-width:220px}
+.campo label{font-size:.75rem;font-weight:700;color:#555;display:block;margin-bottom:4px}
+.campo input{width:100%;padding:11px;border:1.5px solid #d5dbe2;border-radius:9px;font-size:.95rem}
+.campo input:focus{outline:none;border-color:var(--azul)}
+.dica{font-size:.72rem;color:#8a6d1a;background:#FFF8E6;border:1px solid #F0E2B8;border-radius:8px;padding:7px 10px;margin-top:10px}
+.busca{width:100%;padding:12px 14px;border:1.5px solid #d5dbe2;border-radius:10px;font-size:1rem;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 3px 12px rgba(15,61,94,.08)}
+.card h3{font-size:.95rem;color:var(--azul)}
+.card .end{font-size:.75rem;color:#6B7680;margin:3px 0}
+.card .det{font-size:.78rem;color:#3d4852;margin:3px 0}
+.card .preco{font-size:1.05rem;font-weight:800;color:var(--azul);margin:6px 0}
+.acoes{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.btn{flex:1;text-align:center;padding:10px 8px;border-radius:9px;font-size:.8rem;font-weight:700;text-decoration:none;border:none;cursor:pointer;min-width:110px}
+.btn-gerar{background:var(--verde);color:#fff}
+.btn-drive{background:#EEF3F7;color:var(--azul)}
+.resultado{margin-top:10px;display:none;background:#F0FAF4;border:1.5px solid #bfe8cf;border-radius:10px;padding:10px}
+.resultado input{width:100%;padding:9px;border:1px solid #bfe8cf;border-radius:7px;font-size:.8rem;background:#fff;color:#1a4d33}
+.resultado .copiar{margin-top:6px;width:100%;padding:8px;border:none;border-radius:7px;background:var(--azul);color:#fff;font-weight:700;cursor:pointer;font-size:.78rem}
+.vazio{color:#6B7680;text-align:center;padding:30px;grid-column:1/-1}
+.preview{margin-top:6px;display:none}
+.preview a{font-size:.75rem;color:var(--azul);text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Painel de Imóveis — Uso Interno</h1>
+  <p>Selecione um imóvel, confira os dados de contato e gere o link exclusivo para enviar ao cliente.</p>
+</header>
+
+<div class="config">
+  <h2>Seus dados de contato (aparecem na página do cliente)</h2>
+  <div class="campos">
+    <div class="campo">
+      <label>Nome completo do corretor</label>
+      <input id="nome" placeholder="Ex.: João Silva">
+    </div>
+    <div class="campo">
+      <label>WhatsApp (com DDI e DDD, só números)</label>
+      <input id="zap" placeholder="Ex.: 5551999999999" inputmode="numeric">
+    </div>
+  </div>
+  <div class="dica">O link gerado já abre o WhatsApp do cliente com mensagem pré-preenchida citando o imóvel. A página do cliente mostra apenas o seu nome e o seu contato.</div>
+</div>
+
+<input class="busca" id="busca" placeholder="🔎 Buscar imóvel (nome, bairro, valor...)">
+<div class="grid" id="grid"><div class="vazio">Carregando imóveis…</div></div>
+
+<script>
+/* ========= CONFIGURAÇÃO (editável em UM lugar) =========
+   Para mudar o nome do repositório em project-site, edite REPO_FORCE abaixo.
+   Deixe vazio para auto-detectar pelo URL atual.
+   Ex.: const REPO_FORCE = 'meulink-imb-br';
+*/
+const REPO_FORCE = '';
+
+const FOLDER = (() => {
+  if (REPO_FORCE) return '/' + REPO_FORCE.replace(/^\/+|\/+$/g,'') + '/';
+  const p = location.pathname;
+  return p.endsWith('/') ? p : p.substring(0, p.lastIndexOf('/') + 1);
+})();
+const INDEX_URL = FOLDER + 'index.html';
+
+const IMOVEIS = [];
+async function init() {
+  /* se data-interna.json existir, usa (com links do Drive). Senão, usa data.json público. */
+  let data;
+  try { data = await fetch(FOLDER + 'data-interna.json').then(r => r.json()); }
+  catch (e) { /* cai pro público */ }
+  if (!data) {
+    try { data = await fetch(FOLDER + 'data.json').then(r => r.json()); }
+    catch (e) { document.getElementById('grid').innerHTML = '<div class="vazio">Não foi possível carregar os imóveis.</div>'; return; }
+  }
+  IMOVEIS.length = 0;
+  IMOVEIS.push(...data);
+  render('');
+}
+init();
+
+function render(filtro=''){
+  const f = filtro.toLowerCase();
+  const lista = IMOVEIS.filter(i =>
+    (i.titulo + ' ' + (i.endereco||'') + ' ' + i.preco + ' ' + (i.detalhes||[]).join(' ')).toLowerCase().includes(f));
+  const grid = document.getElementById('grid');
+  grid.innerHTML = lista.length ? '' : '<div class="vazio">Nenhum imóvel encontrado.</div>';
+  lista.forEach(im => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const drive = im.drive;
+    card.innerHTML = `
+      <h3>${im.titulo}</h3>
+      <div class="end">${im.endereco || 'Endereço sob consulta'}</div>
+      <div class="det">${(im.detalhes||[]).join(' · ')}</div>
+      <div class="preco">${im.preco}</div>
+      <div class="acoes">
+        ${drive ? `<a class="btn btn-drive" href="${drive}" target="_blank" rel="noopener">📁 Fotos no Drive</a>` : '<span></span>'}
+        <button class="btn btn-gerar">🔗 Gerar link do cliente</button>
+      </div>
+      <div class="resultado">
+        <input readonly value="" onfocus="this.select()">
+        <button class="copiar">📋 Copiar link</button>
+        <div class="preview"><a href="#" target="_blank" rel="noopener">👁 Pré-visualizar</a></div>
+      </div>`;
+    card.querySelector('.btn-gerar').onclick = () => gerarLink(im, card);
+    card.querySelector('.copiar').onclick = function(){
+      const inp = card.querySelector('input');
+      inp.select();
+      try { navigator.clipboard.writeText(inp.value); } catch(_) {}
+      this.textContent = '✅ Copiado!';
+      setTimeout(() => this.textContent = '📋 Copiar link', 1800);
+    };
+    grid.appendChild(card);
+  });
+}
+
+function gerarLink(im, card){
+  const nome = document.getElementById('nome').value.trim();
+  const zap  = document.getElementById('zap').value.replace(/\D/g,'');
+  if (!nome || zap.length < 12){
+    alert('Preencha seu nome e WhatsApp (com DDI+DDD) no topo da página antes de gerar o link.');
+    return;
+  }
+  const sep = INDEX_URL.includes('?') ? '&' : '?';
+  const url = `${INDEX_URL}${sep}imovel=${encodeURIComponent(im.slug)}&n=${encodeURIComponent(nome)}&w=${zap}`;
+  const box = card.querySelector('.resultado');
+  box.style.display = 'block';
+  box.querySelector('input').value = url;
+  const pv = box.querySelector('.preview a');
+  pv.href = url; pv.style.display = 'inline';
+  box.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+document.getElementById('busca').addEventListener('input', e => render(e.target.value));
+</script>
+</body>
+</html>

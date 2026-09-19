@@ -1,0 +1,670 @@
+[
+ {
+  "slug": "beach-sky-705-box",
+  "titulo": "BEACH SKY 705 + BOX",
+  "endereco": "Rua Pindorama, essquina com Rua Ceci, centro de Capão da Canoa-RS",
+  "detalhes": [
+   "02 dormitórioS",
+   "Infraestrutura completa",
+   "Em obras",
+   "95,49 M²"
+  ],
+  "preco": "R$ 1.000.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "beach-sky-705-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1PtTo6d3jmc8-mQgr6XL76evthC_vE87V",
+  "pag": 1
+ },
+ {
+  "slug": "beach-sky-702-box",
+  "titulo": "BEACH SKY 702 + BOX",
+  "endereco": "Rua Pindorama, essquina com Rua Ceci, centro de Capão da Canoa-RS",
+  "detalhes": [
+   "03 Dormitórios",
+   "Infraestrutura completa",
+   "Entrega em 2029",
+   "165.15M²"
+  ],
+  "preco": "R$ 1.900.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "beach-sky-702-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1iAR6KvjxUrVf8sVpLE5m4RdmtebUZo22",
+  "pag": 2
+ },
+ {
+  "slug": "viz-home-lake-b-55",
+  "titulo": "VIZ HOME LAKE B - 55",
+  "endereco": "Rua Pindorama, essquina com Rua Ceci, centro de Capão da Canoa-RS",
+  "detalhes": [
+   "Condominio Fechado",
+   "Infraestrutura completa",
+   "264M²",
+   "11 x 24 m²"
+  ],
+  "preco": "R$ 400.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [],
+  "drive": "https://drive.google.com/drive/folders/19b6xG1VJ5duoLfkjUjDvM90M3foDIP7N",
+  "pag": 2
+ },
+ {
+  "slug": "terreno-rua-taquari",
+  "titulo": "TERRENO RUA TAQUARI",
+  "endereco": "Rua Pindorama, essquina com Rua Ceci, centro de Capão da Canoa-RS",
+  "detalhes": [
+   "450M²",
+   "15 Metros frente",
+   "30 Metros comprimento",
+   "FRENTE MAR"
+  ],
+  "preco": "R$ 2.500.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "terreno-rua-taquari_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/13u8eyr_rXu_JAl5gFsX_eZnznKBXWnKj",
+  "pag": 2
+ },
+ {
+  "slug": "viz-home-lake-l-18",
+  "titulo": "VIZ HOME LAKE L - 18",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "Condominio Fechado",
+   "Infraestrutura",
+   "completa",
+   "275,52M²",
+   "11,48 x 24 m²"
+  ],
+  "preco": "R$ 400.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "viz-home-lake-l-18_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1QHnI9isyXgeu0dwZU-xjXqwO37USSs8f",
+  "pag": 3
+ },
+ {
+  "slug": "sofia-palace-503-c-box",
+  "titulo": "SOFIA PALACE 503  C/ BOX",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "02 Dormitorios",
+   "72,87 M²",
+   "Com Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 1.200.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "sofia-palace-503-c-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1jSY4DiyQJPb6OqRVQpVyaTIuF7Hb7I_t",
+  "pag": 3
+ },
+ {
+  "slug": "sofia-palace-901-c-box",
+  "titulo": "SOFIA PALACE 901 C/ BOX",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "03 Dorm. com sacada",
+   "101,25 M² Privativo",
+   "Box",
+   "INFRAESTRUTURA",
+   "PRÉ LANCAMENTO"
+  ],
+  "preco": "R$ 1.800.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "sofia-palace-901-c-box_0.jpg",
+   "sofia-palace-901-c-box_1.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1Sskkly8UWMJ_2HL9gIKOJK8WQBRcmaIW",
+  "pag": 3
+ },
+ {
+  "slug": "sofia-palace-1207-c-box",
+  "titulo": "SOFIA PALACE 1207 C/ BOX",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "02 Dormitorios",
+   "56,97 M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 1.000.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "sofia-palace-1207-c-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1p0k4bX3wSF3T71mzYWVUfK12xFXJePwW",
+  "pag": 4
+ },
+ {
+  "slug": "sofia-palace-805-c-box",
+  "titulo": "SOFIA PALACE 805  C/ BOX",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "02 Dormitorios",
+   "56,97 M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 800.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "sofia-palace-805-c-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1LJtO76_3MH6n959247BQm3P0uH5mSjIe",
+  "pag": 4
+ },
+ {
+  "slug": "sofia-palace-1004-c-box",
+  "titulo": "SOFIA PALACE 1004 C/ BOX",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "03 Suítes com sacada",
+   "101,25M²",
+   "Box",
+   "Infraestruta"
+  ],
+  "preco": "R$ 2.000.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "sofia-palace-1004-c-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1PxlidjxVHZS0WfNjxfOTSDjduNvOPnWt",
+  "pag": 4
+ },
+ {
+  "slug": "gran-legado-701-c-box",
+  "titulo": "GRAN LEGADO 701 C/ BOX",
+  "endereco": "Rua Taquari 987, Zona Nova, Capão da Canoa-RS",
+  "detalhes": [
+   "03 Dorm. suíte",
+   "100,08 M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 1.100.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [],
+  "drive": "https://drive.google.com/drive/folders/1m77oXO3difzxZYYy9qCHIan1_yweQuCC",
+  "pag": 5
+ },
+ {
+  "slug": "gran-legado-1103-c-box",
+  "titulo": "GRAN LEGADO 1103 C/ BOX",
+  "endereco": "Rua Taquari 987, Zona Nova, Capão da Canoa-RS",
+  "detalhes": [
+   "02 Dormitorios",
+   "70,47 M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 930.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [],
+  "drive": "https://drive.google.com/drive/folders/1J5XIUFzMTfjXBxIgT8EAHtgsUnYtUr1N",
+  "pag": 5
+ },
+ {
+  "slug": "gran-legado-704-c-box",
+  "titulo": "GRAN LEGADO 704 C/ BOX",
+  "endereco": "Rua Taquari 987, Zona Nova, Capão da Canoa-RS",
+  "detalhes": [
+   "02 Dormitorios",
+   "63,63M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 700.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [],
+  "drive": "https://drive.google.com/drive/folders/1zPiYX1fGze0qHpkuO2Jch8BNrWUNBbb3",
+  "pag": 5
+ },
+ {
+  "slug": "gran-legado-805-c-box",
+  "titulo": "GRAN LEGADO 805 C/ BOX",
+  "endereco": "Rua Pindorama, essquina com Rua Ceci, centro de Capão da Canoa-RS",
+  "detalhes": [
+   "02 Dormitorios",
+   "62,85 M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 750.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [],
+  "drive": "https://drive.google.com/drive/folders/1FDCDCK5ZQOjBD2xi-gg2w2sDfqfh_E8c",
+  "pag": 6
+ },
+ {
+  "slug": "beach-sky-703-box-duplo",
+  "titulo": "BEACH SKY 703 BOX DUPLO",
+  "endereco": "Rua Pindorama, essquina com Rua Ceci, centro de Capão da Canoa-RS",
+  "detalhes": [
+   "03 Dorm.",
+   "172,54 M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 1.900.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "beach-sky-703-box-duplo_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/11VsLlTAelcTPIn4uMg1wutYggznY0J2u",
+  "pag": 6
+ },
+ {
+  "slug": "beach-sky-710-com-box",
+  "titulo": "BEACH SKY 710 COM BOX",
+  "endereco": "Rua Pindorama, essquina com Rua Ceci, centro de Capão da Canoa-RS",
+  "detalhes": [
+   "02 Dormitorios",
+   "97,04 M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 900.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "beach-sky-710-com-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1J90vnalbnsusyB2jgsR50fN1_7avghu3",
+  "pag": 6
+ },
+ {
+  "slug": "beach-sky-loja-05",
+  "titulo": "BEACH SKY LOJA 05",
+  "endereco": "Rua Pindorama, essquina com Rua Ceci, centro de Capão da Canoa-RS",
+  "detalhes": [
+   "Loja 05",
+   "M²",
+   "Em obras"
+  ],
+  "preco": "R$ 1.300.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "beach-sky-loja-05_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/10M5oMrKT8n5XheGZsNAaRvkPWa5HTkxt",
+  "pag": 7
+ },
+ {
+  "slug": "viz-home-lake-b-21",
+  "titulo": "VIZ HOME LAKE B 21",
+  "endereco": "Rua Pindorama, essquina com Rua Ceci, centro de Capão da Canoa-RS",
+  "detalhes": [
+   "Condominio Fechado",
+   "Infraestrutura completa",
+   "264M²",
+   "11 x 24 m²"
+  ],
+  "preco": "R$ 500.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [],
+  "drive": "https://drive.google.com/drive/folders/1vOdzk5JIWUpynGI451oBarwnlcA-tnk_",
+  "pag": 7
+ },
+ {
+  "slug": "viz-home-lake-b-54",
+  "titulo": "VIZ HOME LAKE B 54",
+  "endereco": "Rua Pindorama, essquina com Rua Ceci, centro de Capão da Canoa-RS",
+  "detalhes": [
+   "Condominio Fechado",
+   "Infraestrutura completa",
+   "264M²",
+   "11 x 24 m²"
+  ],
+  "preco": "R$ 500.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [],
+  "drive": "https://drive.google.com/drive/folders/1Ky6xjAoYhTzSSZya_93IJtbZ-C380j2C",
+  "pag": 7
+ },
+ {
+  "slug": "ed-notus-1002-c-box",
+  "titulo": "ED. NOTUS 1002 C/ BOX",
+  "endereco": "Rua Taquari 833 Zona Nova - Capão da Canoa",
+  "detalhes": [
+   "Apartamento 02 Dorm.",
+   "Área 63,48m²",
+   "Infraestrutura",
+   "Entrega em Abril 2027"
+  ],
+  "preco": "R$ 750.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [],
+  "drive": "https://drive.google.com/drive/folders/1HAh7ckvT9n7bEaLxxrNQllqYCcD-Feuq",
+  "pag": 8
+ },
+ {
+  "slug": "ed-n-tus-804-c-box",
+  "titulo": "ED. NÓTUS 804 C/ BOX",
+  "endereco": "Rua Taquari 833 Zona Nova - Capão da Canoa",
+  "detalhes": [
+   "Apartamento 02 Dorm.",
+   "Área 63,53M²",
+   "Infraestrutura",
+   "Entrega em Abril 2027"
+  ],
+  "preco": "R$ 650.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [],
+  "drive": "https://drive.google.com/drive/folders/158gL9NFq00IzBeEUX3t2s_Sg1udzQe16",
+  "pag": 8
+ },
+ {
+  "slug": "ed-n-tus-801-c-box",
+  "titulo": "ED. NÓTUS 801 C/ BOX",
+  "endereco": "Rua Taquari 833 Zona Nova - Capão da Canoa",
+  "detalhes": [
+   "Apartamento 03 Dorm.",
+   "Área 91,02M²",
+   "Infraestrutura",
+   "Entrega em Abril 2027"
+  ],
+  "preco": "R$ 1.100.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [],
+  "drive": "https://drive.google.com/drive/folders/1dWzycdLB_i8QBdXZWhwTpEZ5knWYqhwd",
+  "pag": 8
+ },
+ {
+  "slug": "ed-notus-1006-c-box",
+  "titulo": "ED. NOTUS 1006 C/ BOX",
+  "endereco": "Rua Inambú 1141, Atlântida - Xangri-Lá",
+  "detalhes": [
+   "Apartamento 02 Dorm.",
+   "Área 63,53 M²",
+   "Infraestrutura",
+   "Entrega em Abril 2027"
+  ],
+  "preco": "R$ 700.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [],
+  "drive": "https://drive.google.com/drive/folders/1VOBtWjJz8y_4QpN1vFOG-m6qPeoCSJZk",
+  "pag": 9
+ },
+ {
+  "slug": "mans-o-neoclassica",
+  "titulo": "MANSÃO NEOCLASSICA",
+  "endereco": "Rua Inambú 1141, Atlântida - Xangri-Lá",
+  "detalhes": [
+   "Sobrado c/ 05 Suítes",
+   "469M² Área construida",
+   "Piscina, churrasqueira",
+   "Jardinagem e paisagismo",
+   "Garagem p/ 03 carros"
+  ],
+  "preco": "R$ 3.500.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "mans-o-neoclassica_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/10RkJmHZmfYrWr-njcYYssl9UhiMc5Iz9",
+  "pag": 9
+ },
+ {
+  "slug": "pavilh-o-industrial",
+  "titulo": "PAVILHÃO INDUSTRIAL",
+  "endereco": "Rua 2, nº 1068, Morada Sol- Capão da Canoa",
+  "detalhes": [
+   "Pavilhão com 276,65M²",
+   "Projeto moderno",
+   "Com mezanino"
+  ],
+  "preco": "R$ 1.440.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "pavilh-o-industrial_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1Biljck80Ynrwzq4n85R4rUiuuVnYhXex",
+  "pag": 10
+ },
+ {
+  "slug": "rea-com-benfeitorias-1-6-hectares",
+  "titulo": "ÁREA COM BENFEITORIAS 1.6 HECTARES",
+  "endereco": "Rua 2, nº 1068, Morada Sol- Capão da Canoa",
+  "detalhes": [
+   "ÁREA COM BENFEITORIAS 1.6 HECTARES"
+  ],
+  "preco": "R$ 2.500.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "rea-com-benfeitorias-1-6-hectares_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1PXixqGTJBnllyEsQmzlJyGZYkZA9IJFC",
+  "pag": 10
+ },
+ {
+  "slug": "jk-em-parob-rs",
+  "titulo": "JK EM PAROBÉ/RS",
+  "endereco": "Rua 2, nº 1068, Morada Sol- Capão da Canoa",
+  "detalhes": [
+   "JK Nº 24",
+   "Condomínio R$ 100,00"
+  ],
+  "preco": "R$ 80.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "jk-em-parob-rs_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/13kzodK2-e8Z8l2B3Q-biPbIgLIRKJoHZ",
+  "pag": 10
+ },
+ {
+  "slug": "everest-tower-box-30",
+  "titulo": "EVEREST TOWER BOX 30",
+  "endereco": "Rua Taquari 1352 Zona Nova -Capão da Canoa/RS",
+  "detalhes": [
+   "16,67M²"
+  ],
+  "preco": "R$ 100.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "everest-tower-box-30_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1bPJt1_xJcJ7Y85_BzptXjxILGQJXA3Ie",
+  "pag": 11
+ },
+ {
+  "slug": "everest-tower-dep-04",
+  "titulo": "EVEREST TOWER DEP. 04",
+  "endereco": "Rua Taquari 1352 Zona Nova -Capão da Canoa/RS",
+  "detalhes": [
+   "Deposito com 6,52M²"
+  ],
+  "preco": "R$ 40.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "everest-tower-dep-04_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/11FSRzqyiGaZ368F0nYqvNJzqdtcEcRfB",
+  "pag": 11
+ },
+ {
+  "slug": "everest-tower-dep-05",
+  "titulo": "EVEREST TOWER DEP. 05",
+  "endereco": "Rua Taquari 1352 Zona Nova -Capão da Canoa/RS",
+  "detalhes": [
+   "Deposito com 6,52M²"
+  ],
+  "preco": "R$ 40.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "everest-tower-dep-05_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/10mVSjIGBYOmPr6JlCKPd39PTTnDWcfes",
+  "pag": 11
+ },
+ {
+  "slug": "lote-cond-allure",
+  "titulo": "LOTE COND. ALLURE",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "Condominio Fechado",
+   "Infraestrutura completa",
+   "240M²",
+   "10,33 x 24 m²"
+  ],
+  "preco": "R$ 300.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "lote-cond-allure_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1GRFFqmW7RdXz-2_uZVPLxc6YgZ2n0cXp",
+  "pag": 12
+ },
+ {
+  "slug": "sofia-palace-1105-c-box",
+  "titulo": "SOFIA PALACE 1105  C/ BOX",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "02 Dormitorios",
+   "56,97 M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 950.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "sofia-palace-1105-c-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1anMXcdgjwbRTPt7ed0SY_PO4rWYzFu6W",
+  "pag": 12
+ },
+ {
+  "slug": "loja-na-av-paraguassu",
+  "titulo": "LOJA NA AV. PARAGUASSU",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "Av Paraguassu 3827",
+   "Xangri-Lá",
+   "Loja 313M²",
+   "18 x 30"
+  ],
+  "preco": "R$ 6.400.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "loja-na-av-paraguassu_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/18nw2IE-DLhDIUpGE_iRb0arGiQ_M2QUK",
+  "pag": 12
+ },
+ {
+  "slug": "sofia-palace-502-c-box",
+  "titulo": "SOFIA PALACE 502 C/ BOX",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "02 Dormitorios",
+   "56,97 M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 1.200.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "sofia-palace-502-c-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1vkIHxu230kA4rJ4Aq_pQp-Ds4MZZDkd8",
+  "pag": 13
+ },
+ {
+  "slug": "sofia-palace-1007-c-box",
+  "titulo": "SOFIA PALACE 1007  C/ BOX",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "02 Dormitorios",
+   "56,97 M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 800.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "sofia-palace-1007-c-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1WnEerVrkoZkyIeWrQtbB8DDcBr219-QL",
+  "pag": 13
+ },
+ {
+  "slug": "sofia-palace-1101-c-box",
+  "titulo": "SOFIA PALACE 1101 C/ BOX",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "03 Suítes com sacada",
+   "101,25M²",
+   "Box",
+   "Infraestruta"
+  ],
+  "preco": "R$ 2.000.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "sofia-palace-1101-c-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1vYsWA0kxeqWELGihWnaepBej2gUobj5R",
+  "pag": 13
+ },
+ {
+  "slug": "sofia-palace-1104-c-box",
+  "titulo": "SOFIA PALACE 1104 C/ BOX",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "02 Dormitorios",
+   "56,97 M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 2.200.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "sofia-palace-1104-c-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/12YRm1boKzbF3F_VgOGXo9pw5tWriZR-h",
+  "pag": 14
+ },
+ {
+  "slug": "terreno-peri",
+  "titulo": "TERRENO PERI",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "450M²",
+   "15 Metros frente",
+   "30 Metros comprimento",
+   "FRENTE SERRA"
+  ],
+  "preco": "R$ 1.250.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "terreno-peri_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/107BbnbEAuspL6yftP5foryPQLBSGoGmT",
+  "pag": 14
+ },
+ {
+  "slug": "sofia-palace-405-c-box",
+  "titulo": "SOFIA PALACE 405 C/ BOX",
+  "endereco": "Rua Guilherme Guitmann 827, Zona Nova, Capão da Canoa",
+  "detalhes": [
+   "02 Dormitorios",
+   "95 M²",
+   "Box",
+   "Infraestrutura"
+  ],
+  "preco": "R$ 1.100.000,00",
+  "obs": "Estudo de propostas",
+  "fotos": [
+   "sofia-palace-405-c-box_0.jpg"
+  ],
+  "drive": "https://drive.google.com/drive/folders/1EJ3yvjKIAf5kK3WvAP4wSlVThWbblUEs",
+  "pag": 14
+ }
+]

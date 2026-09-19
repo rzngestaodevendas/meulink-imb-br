@@ -1,0 +1,210 @@
+<!-- index.html — LANDING DO CLIENTE (white-label, sem mostrar quem é o dono da tabela)
+     Funciona em GitHub Pages em modo user-site (username.github.io) E project-site (username.github.io/<repo>/).
+     Nenhuma URL absoluta: todos os caminhos derivam de location.pathname. -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Imóvel — Página Exclusiva</title>
+<style>
+:root{--azul:#0F3D5E;--azul-claro:#1B5E88;--dourado:#C9A24B;--bg:#F6F7F9;--card:#FFF;--cinza:#6B7680;--verde:#25D366;--verde-esc:#128C4B}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:#222B33;line-height:1.5}
+.hero{position:relative;height:56vh;min-height:340px;background:#d8dde2;overflow:hidden}
+.hero img{width:100%;height:100%;object-fit:cover;display:block}
+.badge{position:absolute;top:14px;left:14px;background:var(--dourado);color:#fff;font-weight:700;font-size:.78rem;letter-spacing:.5px;padding:6px 14px;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.mini-galeria{display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:var(--card);box-shadow:0 4px 18px rgba(15,61,94,.10)}
+.mini-galeria img{width:110px;height:76px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent;flex-shrink:0;transition:.2s}
+.mini-galeria img:hover{border-color:var(--dourado);transform:scale(1.04)}
+.titulo-box{background:var(--card);padding:20px 18px;margin:14px;border-radius:14px;box-shadow:0 4px 18px rgba(15,61,94,.10)}
+h1{font-size:1.3rem;color:var(--azul)}
+.endereco{color:var(--cinza);font-size:.92rem;margin-top:4px}
+.preco{font-size:2rem;font-weight:800;color:var(--azul);margin-top:10px}
+.cards{margin:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:var(--card);border-radius:14px;box-shadow:0 4px 18px rgba(15,61,94,.10);padding:16px}
+.card-item{text-align:center}.card-item .ic{font-size:1.4rem}.card-item .vl{font-weight:700;color:var(--azul);font-size:1.02rem}.card-item .lb{font-size:.72rem;color:var(--cinza)}
+.secao{background:var(--card);margin:14px;border-radius:14px;box-shadow:0 4px 18px rgba(15,61,94,.10);padding:20px 18px}
+.secao h2{font-size:1.02rem;color:var(--azul);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.secao h2::before{content:"";width:4px;height:20px;background:var(--dourado);border-radius:2px}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tag{background:#EEF3F7;color:var(--azul-claro);font-size:.82rem;padding:7px 14px;border-radius:20px;font-weight:600}
+.corretor-card{display:flex;align-items:center;gap:14px}
+.corretor-card .foto{width:68px;height:68px;border-radius:50%;background:var(--azul);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.5rem;border:3px solid var(--dourado);flex-shrink:0;overflow:hidden}
+.cta{position:sticky;bottom:0;z-index:50;background:linear-gradient(to top,#fff 70%,rgba(255,255,255,0));padding:14px 16px 18px}
+.btn-zap{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;background:var(--verde);color:#fff;font-size:1.06rem;font-weight:700;padding:16px;border:none;border-radius:12px;text-decoration:none;box-shadow:0 6px 18px rgba(37,211,102,.4);transition:.2s}
+.btn-zap:hover{background:var(--verde-esc);transform:translateY(-2px)}
+.btn-zap svg{width:24px;height:24px;fill:#fff}
+.aviso{background:#FFF8E6;border:1px solid #F0E2B8;color:#8a6d1a;font-size:.72rem;text-align:center;border-radius:8px;padding:6px 10px;margin-top:8px}
+footer{color:var(--cinza);font-size:.72rem;text-align:center;padding:6px 20px 24px}
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:100;align-items:center;justify-content:center;flex-direction:column}
+.lightbox.ativo{display:flex}
+.lightbox img{max-width:94vw;max-height:80vh;object-fit:contain;border-radius:8px}
+.lb-fechar{position:absolute;top:16px;right:20px;color:#fff;font-size:2rem;cursor:pointer;background:none;border:none}
+.lb-nav{display:flex;gap:18px;margin-top:14px}
+.lb-nav button{background:rgba(255,255,255,.15);color:#fff;border:none;font-size:1.6rem;width:52px;height:52px;border-radius:50%;cursor:pointer}
+.lb-contador{color:#fff;font-size:.85rem;margin-top:8px}
+.nao-encontrado{text-align:center;padding:80px 24px}
+.nao-encontrado h1{color:var(--azul);margin-bottom:10px}
+.foto-carregando{display:flex;align-items:center;justify-content:center;color:var(--cinza);font-size:.85rem}
+</style>
+</head>
+<body>
+<div id="conteudo" style="display:none">
+  <div class="hero">
+    <img id="foto-principal" src="" alt="">
+    <span class="badge">IMÓVEL EM DESTAQUE</span>
+  </div>
+  <div class="mini-galeria" id="mini-galeria"></div>
+  <div class="titulo-box">
+    <h1 id="titulo"></h1>
+    <div class="endereco" id="endereco"></div>
+    <div class="preco" id="preco"></div>
+  </div>
+  <div class="cards" id="cards" style="display:none">
+    <div class="card-item"><div class="ic">🛏️</div><div class="vl" id="q-quartos"></div><div class="lb">Dormitórios</div></div>
+    <div class="card-item"><div class="ic">📐</div><div class="vl" id="q-area"></div><div class="lb">Área</div></div>
+    <div class="card-item"><div class="ic">📍</div><div class="vl" id="q-regiao"></div><div class="lb">Região</div></div>
+  </div>
+  <div class="secao" id="sec-detalhes">
+    <h2>Características</h2>
+    <div class="tags" id="detalhes"></div>
+  </div>
+  <div class="secao">
+    <h2>Fale com o consultor responsável</h2>
+    <div class="corretor-card">
+      <div class="foto" id="corretor-foto"></div>
+      <div>
+        <div class="corretor-nome" id="corretor-nome"></div>
+        <div class="corretor-creci">Consultoria particular e exclusiva</div>
+        <div class="corretor-creci">Atendimento direto pelo WhatsApp</div>
+      </div>
+    </div>
+  </div>
+  <div class="cta">
+    <a class="btn-zap" id="btn-whatsapp" href="#" target="_blank" rel="noopener">
+      <svg viewBox="0 0 32 32"><path d="M16 2.7C8.6 2.7 2.7 8.6 2.7 16c0 2.5.7 4.8 1.9 6.9L2.7 29.3l6.6-1.7c2 1.1 4.3 1.7 6.7 1.7 7.4 0 13.3-5.9 13.3-13.3S23.4 2.7 16 2.7zm0 24.2c-2.2 0-4.2-.6-6-1.7l-.4-.3-4 1 1.1-3.9-.3-.4c-1.2-1.9-1.8-4-1.8-6.2C4.6 9.6 9.6 4.6 16 4.6S27.4 9.6 27.4 16 22.4 26.9 16 26.9zm6.3-8.5c-.3-.2-2-1-2.3-1.1-.3-.1-.5-.2-.7.2-.2.3-.8 1.1-1 1.3-.2.2-.4.2-.7.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.6.1-.2.5-.6.7-.8.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.8s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.2 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.6.3-.8.3-1.4.2-1.6 0-.1-.2-.2-.5-.4z"/></svg>
+      <span>Quero mais informações — WhatsApp</span>
+    </a>
+    <div class="aviso">🔒 Atendimento exclusivo do consultor. Seus dados não são compartilhados com terceiros.</div>
+  </div>
+  <footer>Valores e disponibilidade sujeitos a confirmação.</footer>
+</div>
+<div class="nao-encontrado" id="erro" style="display:none">
+  <h1>Link de imóvel inválido ou expirado</h1>
+  <p>Solicite ao seu consultor um novo link de acesso.</p>
+</div>
+<div class="lightbox" id="lightbox">
+  <button class="lb-fechar" onclick="fecharLightbox()">✕</button>
+  <img id="lb-img" src="" alt="">
+  <div class="lb-nav">
+    <button onclick="navegar(-1)">‹</button>
+    <button onclick="navegar(1)">›</button>
+  </div>
+  <div class="lb-contador" id="lb-contador"></div>
+</div>
+
+<script>
+/* ========= CONFIGURAÇÃO (editável em UM lugar) =========
+   Se você hospedar como USER-SITE  (username.github.io)             → REPO = ''
+   Se você hospedar como PROJECT-SITE (username.github.io/<repo>/)    → REPO = '<repo>'
+   O código abaixo auto-detecta pela URL, então em geral não precisa mexer.
+   Mas se quiser forçar, descomente e ajuste:
+   const REPO_FORCE = '';                                              // ex: 'meulink-imb-br'
+*/
+const REPO_FORCE = '';
+
+/* Deriva a pasta onde este index.html está — funciona nos dois modos */
+const FOLDER = (() => {
+  if (REPO_FORCE) return '/' + REPO_FORCE.replace(/^\/+|\/+$/g,'') + '/';
+  // remove o nome do arquivo final, mantém a pasta + barra
+  const p = location.pathname;
+  return p.endsWith('/') ? p : p.substring(0, p.lastIndexOf('/') + 1);
+})();
+
+const params = new URLSearchParams(location.search);
+const slug = params.get('imovel');
+
+async function carregar() {
+  let imoveis;
+  try {
+    imoveis = await fetch(FOLDER + 'data.json').then(r => r.json());
+  } catch (e) {
+    document.body.innerHTML = '<div class="nao-encontrado"><h1>Catalogação temporariamente indisponível</h1><p>Tente novamente em alguns instantes.</p></div>';
+    return;
+  }
+  const imovel = imoveis.find(i => i.slug === slug);
+  if (!imovel) { document.getElementById('erro').style.display = 'block'; return; }
+
+  const fotos = (imovel.fotos || []).map(f => FOLDER + 'fotos/' + f);
+  document.title = imovel.titulo + ' — Página Exclusiva';
+  document.getElementById('conteudo').style.display = 'block';
+  if (fotos[0]) document.getElementById('foto-principal').src = fotos[0];
+  document.getElementById('titulo').textContent = imovel.titulo;
+  document.getElementById('endereco').textContent = imovel.endereco ? '📍 ' + imovel.endereco : '';
+  document.getElementById('preco').textContent = imovel.preco;
+
+  /* cards derivados */
+  const texto = imovel.titulo + ' ' + (imovel.detalhes||[]).join(' ');
+  const dorm = (texto.match(/(\d+)\s*dorm/i) || [])[1];
+  const area = (texto.match(/([\d.,]+)\s*m²/i) || [])[1];
+  const regiao = (imovel.endereco||'').match(/Capão da Canoa|Xangri-Lá|Maquiné|Parobé/i);
+  if (dorm || area || regiao) {
+    document.getElementById('cards').style.display = 'grid';
+    if (dorm) document.getElementById('q-quartos').textContent = dorm;
+    else document.getElementById('q-quartos').parentElement.style.display = 'none';
+    if (area) document.getElementById('q-area').textContent = area[1] || area + ' m²';
+    else document.getElementById('q-area').parentElement.style.display = 'none';
+    if (regiao) document.getElementById('q-regiao').textContent = regiao[0];
+    else document.getElementById('q-regiao').parentElement.style.display = 'none';
+  }
+
+  const det = imovel.detalhes || [];
+  document.getElementById('detalhes').innerHTML = det.map(d => `<span class="tag">${d}</span>`).join('');
+  if (!det.length) document.getElementById('sec-detalhes').style.display = 'none';
+
+  /* galeria */
+  const mg = document.getElementById('mini-galeria');
+  fotos.forEach((f, i) => {
+    const img = document.createElement('img');
+    img.src = f; img.alt = 'Foto ' + (i+1);
+    img.onclick = () => abrirLightbox(i);
+    mg.appendChild(img);
+  });
+  let idx = 0;
+  const lb = document.getElementById('lightbox'), lbImg = document.getElementById('lb-img');
+  window.abrirLightbox = i => { idx = i; atualizar(); lb.classList.add('ativo'); };
+  window.fecharLightbox = () => lb.classList.remove('ativo');
+  window.navegar = d => { idx = (idx + d + fotos.length) % fotos.length; atualizar(); };
+  function atualizar(){ lbImg.src = fotos[idx]; document.getElementById('lb-contador').textContent = (idx+1) + ' / ' + fotos.length; }
+  lb.addEventListener('click', e => { if (e.target === lb) fecharLightbox(); });
+  document.addEventListener('keydown', e => {
+    if (!lb.classList.contains('ativo')) return;
+    if (e.key === 'Escape') fecharLightbox();
+    if (e.key === 'ArrowRight') navegar(1);
+    if (e.key === 'ArrowLeft') navegar(-1);
+  });
+
+  /* corretor */
+  const nome = (params.get('n') || '').trim();
+  const wapp = (params.get('w') || '').replace(/\D/g,'');
+  if (nome) {
+    document.getElementById('corretor-nome').textContent = nome;
+    const ini = nome.split(/\s+/).map(p => p[0]).slice(0,2).join('').toUpperCase();
+    document.getElementById('corretor-foto').textContent = ini;
+    if (wapp.length >= 12) {
+      const msg = encodeURIComponent(`Olá ${nome.split(' ')[0]}, vi a página do imóvel "${imovel.titulo}" (${imovel.preco}) e gostaria de mais informações e de agendar uma visita.`);
+      document.getElementById('btn-whatsapp').href = `https://wa.me/${wapp}?text=${msg}`;
+    } else {
+      document.getElementById('btn-whatsapp').style.display = 'none';
+    }
+  } else {
+    document.getElementById('corretor-nome').textContent = 'Consultor responsável';
+    document.getElementById('corretor-foto').textContent = '📞';
+    document.getElementById('btn-whatsapp').style.display = 'none';
+  }
+}
+carregar();
+</script>
+</body>
+</html>
