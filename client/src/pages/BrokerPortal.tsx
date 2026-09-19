@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Camera, Copy, ExternalLink, Eye, EyeOff, Link2, LogIn, LockKeyhole, Save, Search, ShieldCheck, UserPlus, UserRound, MessageCircle } from "lucide-react";
+import { Building2, Camera, Copy, ExternalLink, Eye, EyeOff, Link2, LogIn, LogOut, LockKeyhole, Save, Search, ShieldCheck, UserPlus, UserRound, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -28,7 +28,7 @@ export default function BrokerPortal() {
   const [, params] = useRoute("/tabela/:slug");
   const [, friendlyParams] = useRoute("/:slug");
   const slug = params?.slug || friendlyParams?.slug || "";
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated, logout } = useAuth();
   const info = trpc.portal.info.useQuery({ slug }, { enabled: Boolean(slug), staleTime: 60_000 });
   const [authMode, setAuthMode] = useState<"login" | "register" | "forgot">("login");
   const [email, setEmail] = useState("");
@@ -94,7 +94,7 @@ export default function BrokerPortal() {
     <main className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
       <header className="mb-6 overflow-hidden rounded-3xl bg-[#102c3d] px-6 py-7 text-white shadow-xl sm:px-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex items-center gap-4"><div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white">{organization?.logoUrl ? <img src={organization.logoUrl} alt="Logo da construtora" className="h-full w-full object-contain" /> : <Building2 className="h-7 w-7 text-[#102c3d]" />}</div><div><div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#d7b874]"><Building2 className="h-4 w-4" /> {organization?.tableType === "own_development" ? "Empreendimento próprio" : "Imóveis de terceiros"}</div><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{organization?.publicName || organization?.name || "Tabela de imóveis"}</h1><p className="mt-2 max-w-2xl text-sm text-white/70">{organization?.developmentName ? `${organization.developmentName} · ` : ""}Consulte o estoque autorizado e compartilhe uma apresentação personalizada com seu cliente.</p></div></div><div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-xs text-white/80"><ShieldCheck className="h-4 w-4 text-[#d7b874]" /> Acesso autenticado</div>
+          <div className="flex items-center gap-4"><div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white">{organization?.logoUrl ? <img src={organization.logoUrl} alt="Logo da construtora" className="h-full w-full object-contain" /> : <Building2 className="h-7 w-7 text-[#102c3d]" />}</div><div><div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#d7b874]"><Building2 className="h-4 w-4" /> {organization?.tableType === "own_development" ? "Empreendimento próprio" : "Imóveis de terceiros"}</div><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{organization?.publicName || organization?.name || "Tabela de imóveis"}</h1><p className="mt-2 max-w-2xl text-sm text-white/70">{organization?.developmentName ? `${organization.developmentName} · ` : ""}Consulte o estoque autorizado e compartilhe uma apresentação personalizada com seu cliente.</p></div></div><div className="flex items-center gap-2"><div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-xs text-white/80"><ShieldCheck className="h-4 w-4 text-[#d7b874]" /> Acesso autenticado</div><Button type="button" variant="outline" onClick={() => void logout()} className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"><LogOut className="h-4 w-4" /> Sair</Button></div>
         </div>
       </header>
 
