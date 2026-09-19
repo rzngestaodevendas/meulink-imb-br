@@ -70,8 +70,8 @@ export async function ensureBrokerProfileColumns() {
   if (_brokerProfileColumnsReady) return;
   const binding = getD1Binding();
   if (!binding) throw new Error("Database is not available");
-  for (const name of ["creci", "whatsapp", "profilePhotoUrl"]) {
-    try { await binding.prepare(`ALTER TABLE users ADD COLUMN ${name} TEXT`).run(); }
+  for (const [name, type] of [["profileType", "TEXT NOT NULL DEFAULT 'corretor'"], ["creci", "TEXT"], ["whatsapp", "TEXT"], ["profilePhotoUrl", "TEXT"]]) {
+    try { await binding.prepare(`ALTER TABLE users ADD COLUMN ${name} ${type}`).run(); }
     catch (error) { if (!String(error).toLowerCase().includes("duplicate column")) throw error; }
   }
   _brokerProfileColumnsReady = true;

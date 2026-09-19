@@ -10,6 +10,7 @@ export const users = sqliteTable("users", {
   name: text("name"),
   email: text("email"),
   passwordHash: text("passwordHash"),
+  profileType: text("profileType", { enum: ["corretor", "corretora"] }).notNull().default("corretor"),
   creci: text("creci"),
   whatsapp: text("whatsapp"),
   profilePhotoUrl: text("profilePhotoUrl"),

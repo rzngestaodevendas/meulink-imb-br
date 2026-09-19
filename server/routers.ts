@@ -67,7 +67,7 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
-    register: publicProcedure.input(z.object({ organizationId: z.number().int().positive(), name: z.string().trim().min(5).max(180), email: z.string().trim().email(), password: z.string().min(8).max(200), whatsapp: z.string().regex(/^\d{12,15}$/), creci: z.string().trim().min(2).max(40), profilePhotoUrl: z.string().trim().startsWith("/media/").optional().default("") })).mutation(async ({ ctx, input }) => {
+    register: publicProcedure.input(z.object({ organizationId: z.number().int().positive(), name: z.string().trim().min(5).max(180), email: z.string().trim().email(), password: z.string().min(8).max(200), profileType: z.enum(["corretor", "corretora"]).default("corretor"), whatsapp: z.string().regex(/^\d{12,15}$/), creci: z.string().trim().min(2).max(40), profilePhotoUrl: z.string().trim().startsWith("/media/").optional().default("") })).mutation(async ({ ctx, input }) => {
       await ensurePasswordColumn(); await ensureBrokerProfileColumns();
       const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const email = input.email.toLowerCase();
@@ -75,7 +75,7 @@ export const appRouter = router({
       const [organization] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.id, input.organizationId)).limit(1);
       if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." });
       const openId = `broker:${email}`;
-      await db.insert(users).values({ openId, name: input.name, email, passwordHash: await hashPassword(input.password), whatsapp: input.whatsapp, creci: input.creci, profilePhotoUrl: input.profilePhotoUrl || null, loginMethod: "email", role: "user" });
+      await db.insert(users).values({ openId, name: input.name, email, passwordHash: await hashPassword(input.password), profileType: input.profileType, whatsapp: input.whatsapp, creci: input.creci, profilePhotoUrl: input.profilePhotoUrl || null, loginMethod: "email", role: "user" });
       const [user] = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
       if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível criar o cadastro." });
       await db.insert(organizationMembers).values({ organizationId: input.organizationId, userId: user.id, role: "broker" });
@@ -84,7 +84,7 @@ export const appRouter = router({
       ctx.res.cookie(COOKIE_NAME, token, { ...getSessionCookieOptions(ctx.req), maxAge: 365 * 24 * 60 * 60 * 1000 });
       return { success: true as const };
     }),
-    updateProfile: protectedProcedure.input(z.object({ name: z.string().trim().min(5).max(180), whatsapp: z.string().regex(/^\d{12,15}$/), creci: z.string().trim().min(2).max(40), profilePhotoUrl: z.string().trim().startsWith("/media/").or(z.literal("")) })).mutation(async ({ ctx, input }) => { await ensureBrokerProfileColumns(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); await db.update(users).set({ name: input.name, whatsapp: input.whatsapp, creci: input.creci, profilePhotoUrl: input.profilePhotoUrl || null }).where(eq(users.id, ctx.user.id)); return { success: true as const }; }),
+    updateProfile: protectedProcedure.input(z.object({ name: z.string().trim().min(5).max(180), profileType: z.enum(["corretor", "corretora"]), whatsapp: z.string().regex(/^\d{12,15}$/), creci: z.string().trim().min(2).max(40), profilePhotoUrl: z.string().trim().startsWith("/media/").or(z.literal("")) })).mutation(async ({ ctx, input }) => { await ensureBrokerProfileColumns(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); await db.update(users).set({ name: input.name, profileType: input.profileType, whatsapp: input.whatsapp, creci: input.creci, profilePhotoUrl: input.profilePhotoUrl || null }).where(eq(users.id, ctx.user.id)); return { success: true as const }; }),
     uploadProfilePhoto: protectedProcedure.input(z.object({ fileName: z.string().trim().min(1).max(160), contentType: z.enum(["image/jpeg", "image/png", "image/webp"]), data: z.string().min(100).max(12_000_000) })).mutation(async ({ ctx, input }) => { const bucket = getPhotosBucket(); if (!bucket) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Armazenamento de fotos indisponível." }); const encoded = input.data.includes(",") ? input.data.split(",", 2)[1] : input.data; const binary = atob(encoded); const bytes = new Uint8Array(binary.length); for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index); const safeName = input.fileName.toLowerCase().replace(/[^a-z0-9.-]+/g, "-").slice(-100) || "perfil.jpg"; const key = `brokers/${ctx.user.id}/${Date.now()}-${nanoid(8)}-${safeName}`; await bucket.put(key, bytes, { httpMetadata: { contentType: input.contentType, cacheControl: "public, max-age=31536000, immutable" } }); return { url: `/media/${key}` }; }),
     forgotPassword: publicProcedure.input(z.object({ email: z.string().trim().email() })).mutation(async () => ({ success: true as const, message: "Se o e-mail estiver cadastrado, o administrador da tabela deverá enviar uma nova senha." })),
     login: publicProcedure.input(z.object({ email: z.string().trim().email(), password: z.string().min(8).max(200) })).mutation(async ({ ctx, input }) => {
@@ -208,7 +208,7 @@ export const appRouter = router({
       const token = nanoid(24);
       await db.insert(shareLinks).values({ organizationId: scope.organizationId, propertyId: property.id, token, brokerName: input.brokerName, brokerPhone: input.brokerPhone, brokerPhotoUrl: input.brokerPhotoUrl || null, createdBy: ctx.user.id });
       await recordAudit(ctx, scope.organizationId, "share_link.created", "share_link", undefined, { propertyId: property.id, brokerName: input.brokerName });
-      return { token, property: parseProperty(property) };
+      return { token, property: parseProperty(property), profileType: ctx.user.profileType === "corretora" ? "corretora" : "corretor", brokerSlug: input.brokerName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100) };
     }),
 
     publicLink: publicProcedure.input(z.object({ token: z.string().trim().min(8).max(80) })).query(async ({ input }) => {
