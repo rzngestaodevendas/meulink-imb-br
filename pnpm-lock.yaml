@@ -8,6 +8,15 @@ overrides:
   tailwindcss>nanoid: 3.3.7
 
 patchedDependencies:
+  body-parser@1.20.3:
+    hash: 4f019fbed51c4e19ee8be5979f1a40ea9e9fdc69c125fca691836d80767f29e9
+    path: patches/body-parser@1.20.3.patch
+  iconv-lite@0.4.24:
+    hash: b725d21a5b676153fd3a1130f54c4bada4118632c7e9d250aa5e30255b741e23
+    path: patches/iconv-lite@0.4.24.patch
+  raw-body@2.5.2:
+    hash: 19bfee087bcde3fee29716940e74e7fa5a3530c6084984c934a069814e9e923c
+    path: patches/raw-body@2.5.2.patch
   wouter@3.7.1:
     hash: 4e16e6ff3fde7d6c1024d3e0c8605dc9eb6afb690d0d49958c2f449091813072
     path: patches/wouter@3.7.1.patch
@@ -7477,7 +7486,7 @@ snapshots:
 
   blake3-wasm@2.1.5: {}
 
-  body-parser@1.20.3:
+  body-parser@1.20.3(patch_hash=4f019fbed51c4e19ee8be5979f1a40ea9e9fdc69c125fca691836d80767f29e9):
     dependencies:
       bytes: 3.1.2
       content-type: 1.0.5
@@ -7485,10 +7494,10 @@ snapshots:
       depd: 2.0.0
       destroy: 1.2.0
       http-errors: 2.0.0
-      iconv-lite: 0.4.24
+      iconv-lite: 0.4.24(patch_hash=b725d21a5b676153fd3a1130f54c4bada4118632c7e9d250aa5e30255b741e23)
       on-finished: 2.4.1
       qs: 6.13.0
-      raw-body: 2.5.2
+      raw-body: 2.5.2(patch_hash=19bfee087bcde3fee29716940e74e7fa5a3530c6084984c934a069814e9e923c)
       type-is: 1.6.18
       unpipe: 1.0.0
     transitivePeerDependencies:
@@ -8065,7 +8074,7 @@ snapshots:
     dependencies:
       accepts: 1.3.8
       array-flatten: 1.1.1
-      body-parser: 1.20.3
+      body-parser: 1.20.3(patch_hash=4f019fbed51c4e19ee8be5979f1a40ea9e9fdc69c125fca691836d80767f29e9)
       content-disposition: 0.5.4
       content-type: 1.0.5
       cookie: 0.7.1
@@ -8333,7 +8342,7 @@ snapshots:
       statuses: 2.0.1
       toidentifier: 1.0.1
 
-  iconv-lite@0.4.24:
+  iconv-lite@0.4.24(patch_hash=b725d21a5b676153fd3a1130f54c4bada4118632c7e9d250aa5e30255b741e23):
     dependencies:
       safer-buffer: 2.1.2
 
@@ -9087,11 +9096,11 @@ snapshots:
 
   range-parser@1.2.1: {}
 
-  raw-body@2.5.2:
+  raw-body@2.5.2(patch_hash=19bfee087bcde3fee29716940e74e7fa5a3530c6084984c934a069814e9e923c):
     dependencies:
       bytes: 3.1.2
       http-errors: 2.0.0
-      iconv-lite: 0.4.24
+      iconv-lite: 0.4.24(patch_hash=b725d21a5b676153fd3a1130f54c4bada4118632c7e9d250aa5e30255b741e23)
       unpipe: 1.0.0
 
   react-day-picker@9.11.1(react@19.2.1):

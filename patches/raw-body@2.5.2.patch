@@ -1,0 +1,27 @@
+[1mdiff --git a/index.js b/index.js[m
+[1mindex 9cdcd12217303cdbbf1c2524978db7ba3379555e..edde5d3a74cdca3781fe22977a9657efe740e273 100644[m
+[1m--- a/index.js[m
+[1m+++ b/index.js[m
+[36m@@ -15,9 +15,12 @@[m
+ var asyncHooks = tryRequireAsyncHooks()[m
+ var bytes = require('bytes')[m
+ var createError = require('http-errors')[m
+[31m-var iconv = require('iconv-lite')[m
+ var unpipe = require('unpipe')[m
+ [m
+[32m+[m[32mfunction getIconv () {[m
+[32m+[m[32m  return require('iconv-lite')[m
+[32m+[m[32m}[m
+[32m+[m
+ /**[m
+  * Module exports.[m
+  * @public[m
+[36m@@ -43,7 +46,7 @@[m [mfunction getDecoder (encoding) {[m
+   if (!encoding) return null[m
+ [m
+   try {[m
+[31m-    return iconv.getDecoder(encoding)[m
+[32m+[m[32m    return getIconv().getDecoder(encoding)[m
+   } catch (e) {[m
+     // error getting decoder[m
+     if (!ICONV_ENCODING_MESSAGE_REGEXP.test(e.message)) throw e[m
