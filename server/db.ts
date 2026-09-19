@@ -4,12 +4,17 @@ import { AuditLog, auditLogs, InsertUser, organizationMembers, organizations, us
 import { ENV } from "./_core/env";
 
 type D1DatabaseLike = Parameters<typeof drizzle>[0];
+type PhotosBucket = { put(key: string, value: Uint8Array, options?: { httpMetadata?: { contentType?: string; cacheControl?: string } }): Promise<unknown> };
 let _db: ReturnType<typeof drizzle> | null = null;
 let _passwordColumnReady = false;
 let _organizationColumnsReady = false;
 
 function getD1Binding(): D1DatabaseLike | undefined {
   return (globalThis as typeof globalThis & { __MEULINK_D1?: D1DatabaseLike }).__MEULINK_D1;
+}
+
+export function getPhotosBucket(): PhotosBucket | undefined {
+  return (globalThis as typeof globalThis & { __MEULINK_PHOTOS?: PhotosBucket }).__MEULINK_PHOTOS;
 }
 
 export async function getDb() {

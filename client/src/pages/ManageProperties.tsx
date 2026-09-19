@@ -45,6 +45,7 @@ export default function ManageProperties() {
   const update = trpc.properties.update.useMutation({ onSuccess: () => { toast.success("Imóvel atualizado"); setEditing(null); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
   const archive = trpc.properties.archive.useMutation({ onSuccess: () => { toast.success("Imóvel arquivado"); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
   const bulkCreate = trpc.properties.bulkCreate.useMutation({ onSuccess: result => { toast.success(`${result.count} imóveis importados`); setImportCsv(""); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
+  const uploadPhoto = trpc.properties.uploadPhoto.useMutation({ onError: error => toast.error(error.message) });
   const [importCsv, setImportCsv] = useState("");
   const properties = (catalog.data || []) as Property[];
   const editingProperty = useMemo(() => editing && editing !== "new" ? properties.find(property => property.id === editing) : undefined, [editing, properties]);
@@ -52,6 +53,21 @@ export default function ManageProperties() {
   const hasOrganization = Boolean(organizations.data?.length);
   function openNew() { if (!hasOrganization) { toast.error("Cadastre ou selecione uma construtora/tabela antes de incluir imóveis."); window.location.href = "/painelgestao/construtoras"; return; } setEditing("new"); setForm(blankForm); }
   function openEdit(property: Property) { setEditing(property.id); setForm(toForm(property)); }
+  async function addPhotos(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    if (files.length > 30) { toast.error("Selecione no máximo 30 fotos por vez."); return; }
+    const accepted = files.filter(file => ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type) && file.size <= 8 * 1024 * 1024);
+    if (accepted.length !== files.length) toast.error("Use imagens JPG, PNG, WEBP ou GIF de até 8 MB cada.");
+    const uploaded: string[] = [];
+    for (const file of accepted) {
+      const data = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file); });
+      const result = await uploadPhoto.mutateAsync({ fileName: file.name, contentType: file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data });
+      uploaded.push(result.url);
+    }
+    if (uploaded.length) { setForm(current => ({ ...current, photos: [...current.photos.split("\n").filter(Boolean), ...uploaded].join("\n") })); toast.success(`${uploaded.length} foto(s) adicionada(s)`); }
+    event.target.value = "";
+  }
   function submit(event: React.FormEvent) {
     event.preventDefault();
     const data = { title: form.title, address: form.address, responsibleName: form.responsibleName, responsiblePhone: form.responsiblePhone, details: form.details.split("\n").map(item => item.trim()).filter(Boolean), price: form.price, notes: form.notes, photos: form.photos.split("\n").map(item => item.trim()).filter(Boolean), status: form.status, publicEnabled: form.publicEnabled };
@@ -77,7 +93,7 @@ export default function ManageProperties() {
       <label className="grid gap-2 text-sm font-medium">Responsável interno<Input value={form.responsibleName} onChange={event => setForm({ ...form, responsibleName: event.target.value })} placeholder="Nome do responsável pelo imóvel" /></label>
       <label className="grid gap-2 text-sm font-medium">WhatsApp interno<Input value={form.responsiblePhone} onChange={event => setForm({ ...form, responsiblePhone: event.target.value })} placeholder="Não aparece na landing pública" /></label>
       <label className="grid gap-2 text-sm font-medium">Características <span className="text-xs font-normal text-slate-500">Uma por linha</span><textarea value={form.details} onChange={event => setForm({ ...form, details: event.target.value })} className="min-h-28 rounded-md border bg-background px-3 py-2 text-sm" placeholder={'03 dormitórios\n101,25 M²\nBox'} /></label>
-      <label className="grid gap-2 text-sm font-medium">Fotos <span className="text-xs font-normal text-slate-500">URL do storage, uma por linha</span><textarea value={form.photos} onChange={event => setForm({ ...form, photos: event.target.value })} className="min-h-28 rounded-md border bg-background px-3 py-2 text-sm" placeholder="/manus-storage/foto.jpg" /></label>
+      <label className="grid gap-2 text-sm font-medium">Fotos <span className="text-xs font-normal text-slate-500">Adicione arquivos ou cole URLs, uma por linha</span><textarea value={form.photos} onChange={event => setForm({ ...form, photos: event.target.value })} className="min-h-28 rounded-md border bg-background px-3 py-2 text-sm" placeholder="/media/properties/foto.jpg" /><span className="mt-1 flex items-center gap-3"><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={addPhotos} disabled={uploadPhoto.isPending} className="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-[#102c3d] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white" />{uploadPhoto.isPending && <span className="shrink-0 text-xs text-[#b38b3d]">Enviando...</span>}</span><span className="text-xs font-normal text-slate-500">Até 60 fotos por imóvel · JPG, PNG ou WEBP · 8 MB por foto</span></label>
       <label className="grid gap-2 text-sm font-medium">Status<select value={form.status} onChange={event => setForm({ ...form, status: event.target.value as Status })} className="h-10 rounded-md border bg-background px-3 text-sm">{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label className="grid gap-2 text-sm font-medium">Observações<textarea value={form.notes} onChange={event => setForm({ ...form, notes: event.target.value })} className="min-h-10 rounded-md border bg-background px-3 py-2 text-sm" placeholder="Informações internas ou comerciais" /></label>
       <label className="flex items-center gap-3 text-sm font-medium lg:col-span-2"><input type="checkbox" checked={form.publicEnabled} onChange={event => setForm({ ...form, publicEnabled: event.target.checked })} className="h-4 w-4 accent-[#20bd63]" /> Permitir divulgação em links públicos</label>

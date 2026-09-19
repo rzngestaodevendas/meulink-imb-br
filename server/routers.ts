@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { organizationInvites, organizationMembers, organizations, properties, shareLinks, users } from "../drizzle/schema";
-import { ensureOrganizationColumns, ensurePasswordColumn, getAuditLogs, getDb, getOrganizationForUser, getUserByEmail, writeAuditLog } from "./db";
+import { ensureOrganizationColumns, ensurePasswordColumn, getAuditLogs, getDb, getOrganizationForUser, getPhotosBucket, getUserByEmail, writeAuditLog } from "./db";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
 import { COOKIE_NAME } from "@shared/const";
@@ -22,7 +22,7 @@ export const propertyPayload = z.object({
   details: z.array(z.string().trim().min(1).max(240)).max(30),
   price: z.string().trim().max(80).optional().default(""),
   notes: z.string().trim().max(5000).optional().default(""),
-  photos: z.array(z.string().trim().url().or(z.string().trim().startsWith("/manus-storage/"))).max(30),
+  photos: z.array(z.string().trim().url().or(z.string().trim().startsWith("/manus-storage/")).or(z.string().trim().startsWith("/media/"))).max(60),
   status: statusSchema,
   publicEnabled: z.boolean(),
 });
@@ -198,6 +198,19 @@ export const appRouter = router({
   }),
 
   properties: router({
+    uploadPhoto: protectedProcedure.input(z.object({ fileName: z.string().trim().min(1).max(160), contentType: z.enum(["image/jpeg", "image/png", "image/webp", "image/gif"]), data: z.string().min(100).max(12_000_000) })).mutation(async ({ ctx, input }) => {
+      const scope = await requireCompanyAdmin(ctx);
+      const bucket = getPhotosBucket();
+      if (!bucket) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Armazenamento de fotos indisponível." });
+      const encoded = input.data.includes(",") ? input.data.split(",", 2)[1] : input.data;
+      const binary = atob(encoded);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+      const safeName = input.fileName.toLowerCase().replace(/[^a-z0-9.-]+/g, "-").slice(-100) || "foto.jpg";
+      const key = `properties/${scope.organizationId}/${Date.now()}-${nanoid(8)}-${safeName}`;
+      await bucket.put(key, bytes, { httpMetadata: { contentType: input.contentType, cacheControl: "public, max-age=31536000, immutable" } });
+      return { url: `/media/${key}` };
+    }),
     create: protectedProcedure.input(propertyPayload).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });

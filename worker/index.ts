@@ -29,6 +29,7 @@ app.get("/health", (_req, res) => {
 });
 
 const photos = (env as unknown as { PHOTOS: R2Bucket }).PHOTOS;
+(globalThis as typeof globalThis & { __MEULINK_PHOTOS?: R2Bucket }).__MEULINK_PHOTOS = photos;
 app.get("/media/*", async (req, res) => {
   const key = req.path.slice("/media/".length);
   if (!key || key.includes("..")) {
