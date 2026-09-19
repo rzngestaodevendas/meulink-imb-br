@@ -56,7 +56,7 @@ export default function BrokerPortal() {
   const portal = trpc.portal.catalog.useQuery({ slug }, { enabled: Boolean(slug && isAuthenticated), staleTime: 15_000 });
   const createLink = trpc.catalog.createLink.useMutation({
     onSuccess: result => {
-      const url = `${window.location.origin}/imovel/${result.property.code}?link=${result.token}`;
+      const url = `${window.location.origin}/${result.property.code}?link=${result.token}`;
       setLinks(current => ({ ...current, [result.property.id]: url }));
       toast.success("Landing criada com os seus dados");
     },

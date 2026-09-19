@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useRoute } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import DashboardLayout from "./components/DashboardLayout";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -38,6 +38,12 @@ function ProtectedAdminUsers() {
   return <DashboardLayout><AdminUsers /></DashboardLayout>;
 }
 
+function FriendlyPath() {
+  const [, params] = useRoute("/:value");
+  const value = params?.value || "";
+  return /^ML-\d+$/i.test(value) ? <PublicProperty /> : <BrokerPortal />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -56,7 +62,7 @@ function Router() {
       <Route path="/app/auditoria" component={ProtectedAuditLog} />
       <Route path="/app/construtoras" component={ProtectedOrganizations} />
       <Route path="/app/usuarios" component={ProtectedAdminUsers} />
-      <Route path="/:slug" component={BrokerPortal} />
+      <Route path="/:value" component={FriendlyPath} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
