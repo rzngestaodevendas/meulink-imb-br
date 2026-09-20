@@ -20,7 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Building2, ClipboardList, Factory, LayoutDashboard, LogOut, PanelLeft, Users, UserCog } from "lucide-react";
+import { Building2, ClipboardList, Factory, LogOut, PanelLeft, Users, UserCog } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -28,7 +28,6 @@ import AdminLogin from "@/pages/AdminLogin";
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Catálogo", path: "/painelgestao" },
   { icon: Building2, label: "Gerenciar imóveis", path: "/painelgestao/imoveis" },
   { icon: Users, label: "Equipe", path: "/painelgestao/equipe" },
   { icon: ClipboardList, label: "Auditoria", path: "/painelgestao/auditoria" },

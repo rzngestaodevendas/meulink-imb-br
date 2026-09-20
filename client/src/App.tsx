@@ -5,7 +5,6 @@ import { Route, Switch, useRoute } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import DashboardLayout from "./components/DashboardLayout";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
 import PublicProperty from "./pages/PublicProperty";
 import ManageProperties from "./pages/ManageProperties";
 import Team from "./pages/Team";
@@ -15,7 +14,7 @@ import BrokerPortal from "./pages/BrokerPortal";
 import AdminUsers from "./pages/AdminUsers";
 
 function ProtectedApp() {
-  return <DashboardLayout><Home /></DashboardLayout>;
+  return <DashboardLayout><Organizations /></DashboardLayout>;
 }
 
 function ProtectedProperties() {
