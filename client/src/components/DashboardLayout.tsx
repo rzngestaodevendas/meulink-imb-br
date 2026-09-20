@@ -4,11 +4,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import AdminLogin from "@/pages/AdminLogin";
 import { Button } from "./ui/button";
-import { Building2, ClipboardList, Factory, LogOut, PanelTop, UserCog, Users } from "lucide-react";
+import { Building2, ClipboardList, Factory, LogOut, PanelTop, Plus, UserCog, Users } from "lucide-react";
 import { useLocation } from "wouter";
 
 const menuItems = [
-  { icon: Factory, label: "Construtoras", path: "/painelgestao/construtoras" },
+  { icon: Factory, label: "Tabelas", path: "/painelgestao/construtoras" },
   { icon: Users, label: "Equipe", path: "/painelgestao/equipe" },
   { icon: ClipboardList, label: "Auditoria", path: "/painelgestao/auditoria" },
   { icon: UserCog, label: "Usuários", path: "/painelgestao/usuarios", adminOnly: true },
@@ -41,6 +41,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             return <Button key={item.path} type="button" variant="ghost" onClick={() => setLocation(item.path)} className={`h-10 shrink-0 gap-2 rounded-lg px-3 text-sm font-medium ${active ? "bg-[#eef3f5] text-[#102c3d]" : "text-slate-600 hover:bg-slate-100 hover:text-[#102c3d]"}`}><item.icon className={`h-4 w-4 ${active ? "text-[#b38b3d]" : "text-slate-400"}`} />{item.label}</Button>;
           })}
         </nav>
+        <Button type="button" onClick={() => setLocation("/painelgestao/construtoras?novo=1")} className="hidden h-10 shrink-0 gap-2 bg-[#20bd63] px-3 text-sm font-semibold text-white hover:bg-[#12934a] md:flex"><Plus className="h-4 w-4" /> Criar tabela</Button>
         <div className="flex shrink-0 items-center gap-2">
           <span className="hidden items-center gap-2 rounded-full bg-[#f6f1e7] px-3 py-2 text-xs font-medium text-[#8a6b32] xl:flex"><PanelTop className="h-3.5 w-3.5" /> Operação segura</span>
           <DropdownMenu>

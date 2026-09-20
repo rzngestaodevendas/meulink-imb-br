@@ -29,7 +29,14 @@ export default function Organizations() {
   const set = (field: keyof FormState, value: string) => setForm(current => ({ ...current, [field]: value }));
   const startEdit = (organization: Organization) => { setEditingId(organization.id); setShowNewTable(true); setForm({ entityType: organization.entityType || "construtora", name: organization.name, publicName: organization.publicName || "", logoUrl: organization.logoUrl || "", contactName: organization.contactName || "", contactPhone: organization.contactPhone || "", secondaryContactName: organization.secondaryContactName || "", secondaryContactPhone: organization.secondaryContactPhone || "", contactEmail: organization.contactEmail || "", contactAddress: organization.contactAddress || "", websiteUrl: organization.websiteUrl || "", tableType: organization.tableType || "third_party", developmentName: organization.developmentName || "", developmentDescription: organization.developmentDescription || "" }); window.scrollTo({ top: 0, behavior: "smooth" }); };
   useEffect(() => {
-    const editId = Number(new URLSearchParams(window.location.search).get("editar"));
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("novo") === "1") {
+      setShowNewTable(true);
+      setEditingId(null);
+      setForm(empty);
+      return;
+    }
+    const editId = Number(params.get("editar"));
     const organization = (organizations.data as Organization[] | undefined)?.find(item => item.id === editId);
     if (organization && !editingId) startEdit(organization);
   }, [organizations.data]);
