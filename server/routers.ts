@@ -129,8 +129,13 @@ export const appRouter = router({
       await ensureOrganizationColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
-      if (ctx.user.role === "admin") return db.select().from(organizations).orderBy(organizations.name);
-      return db.select().from(organizationMembers).innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id)).where(eq(organizationMembers.userId, ctx.user.id)).then(rows => rows.map(row => row.organizations));
+      const rows = ctx.user.role === "admin"
+        ? await db.select().from(organizations).orderBy(organizations.name)
+        : await db.select().from(organizationMembers).innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id)).where(eq(organizationMembers.userId, ctx.user.id)).then(items => items.map(row => row.organizations));
+      return Promise.all(rows.map(async organization => {
+        const availableProperties = await db.select().from(properties).where(and(eq(properties.organizationId, organization.id), eq(properties.status, "available"), eq(properties.publicEnabled, 1))).orderBy(properties.title);
+        return { ...organization, availablePropertyCount: availableProperties.length, availableProperties: availableProperties.map(property => parseProperty(property)) };
+      }));
     }),
 
     create: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(180), publicName: z.string().trim().max(180).optional().default(""), logoUrl: z.string().trim().url().or(z.string().trim().startsWith("/media/")).or(z.literal("")), contactName: z.string().trim().max(180).optional().default(""), contactPhone: z.string().trim().max(32).optional().default(""), secondaryContactName: z.string().trim().max(180).optional().default(""), secondaryContactPhone: z.string().trim().max(32).optional().default(""), contactEmail: z.string().trim().email().or(z.literal("")), contactAddress: z.string().trim().max(500).optional().default(""), websiteUrl: z.string().trim().url().or(z.literal("")), tableType: z.enum(["third_party", "own_development"]), developmentName: z.string().trim().max(180).optional().default(""), developmentDescription: z.string().trim().max(2000).optional().default("") })).mutation(async ({ ctx, input }) => {

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Check, Edit3, Plus, Save, Archive, UploadCloud, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type Status = "available" | "reserved" | "sold" | "unavailable" | "updating" | "hidden";
@@ -53,6 +53,17 @@ export default function ManageProperties() {
   const hasOrganization = Boolean(organizations.data?.length);
   function openNew() { if (!hasOrganization) { toast.error("Cadastre ou selecione uma construtora/tabela antes de incluir imóveis."); window.location.href = "/painelgestao/construtoras"; return; } setEditing("new"); setForm(blankForm); }
   function openEdit(property: Property) { setEditing(property.id); setForm(toForm(property)); }
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("novo") === "1" && hasOrganization) {
+      setEditing("new");
+      setForm(blankForm);
+      return;
+    }
+    const propertyId = Number(params.get("editar"));
+    const property = propertyId ? properties.find(item => item.id === propertyId) : undefined;
+    if (property) openEdit(property);
+  }, [hasOrganization, properties]);
   async function addPhotos(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
