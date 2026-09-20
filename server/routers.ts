@@ -212,7 +212,11 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const scope = await requireCompanyAdmin(ctx);
-      return db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, scope.organizationId)).orderBy(responsibleProfiles.name);
+      const saved = await db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, scope.organizationId)).orderBy(responsibleProfiles.name);
+      const propertyRows = await db.select({ name: properties.responsibleName, phone: properties.responsiblePhone }).from(properties).where(and(eq(properties.organizationId, scope.organizationId), eq(properties.status, "available")));
+      const savedNames = new Set(saved.map(profile => profile.name.trim().toLowerCase()));
+      const discovered = propertyRows.filter(row => row.name?.trim() && !savedNames.has(row.name.trim().toLowerCase())).reduce((rows, row) => { const name = row.name!.trim(); if (!rows.some(item => item.name.toLowerCase() === name.toLowerCase())) rows.push({ id: -rows.length - 1, organizationId: scope.organizationId, name, phone: row.phone || null, email: null, creci: null, photoUrl: null, bio: null, createdAt: null, updatedAt: null, persisted: false }); return rows; }, [] as Array<{ id: number; organizationId: number; name: string; phone: string | null; email: null; creci: null; photoUrl: null; bio: null; createdAt: null; updatedAt: null; persisted: boolean }>);
+      return [...saved.map(profile => ({ ...profile, persisted: true })), ...discovered];
     }),
     upsert: protectedProcedure.input(z.object({ id: z.number().int().positive().optional(), name: z.string().trim().min(2).max(180), phone: z.string().trim().max(32).optional().default(""), email: z.string().trim().email().or(z.literal("")).optional().default(""), creci: z.string().trim().max(60).optional().default(""), photoUrl: z.string().trim().startsWith("/media/").or(z.literal("")).optional().default(""), bio: z.string().trim().max(1000).optional().default("") })).mutation(async ({ ctx, input }) => {
       await ensureResponsibleProfilesTable();
