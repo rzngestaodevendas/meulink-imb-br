@@ -12,6 +12,7 @@ import AuditLog from "./pages/AuditLog";
 import Organizations from "./pages/Organizations";
 import OrganizationDetail from "./pages/OrganizationDetail";
 import BrokerPortal from "./pages/BrokerPortal";
+import PublicCatalog from "./pages/PublicCatalog";
 import AdminUsers from "./pages/AdminUsers";
 
 function ProtectedApp() {
@@ -52,6 +53,7 @@ function Router() {
       <Route path="/corretor/:brokerSlug/imovel/:code" component={PublicProperty} />
       <Route path="/corretora/:brokerSlug/imovel/:code" component={PublicProperty} />
       <Route path="/tabela/:slug" component={BrokerPortal} />
+      <Route path="/tabela/:slug/compartilhar" component={PublicCatalog} />
       <Route path="/painelgestao" component={ProtectedApp} />
       <Route path="/painelgestao/imoveis" component={ProtectedProperties} />
       <Route path="/painelgestao/equipe" component={ProtectedTeam} />

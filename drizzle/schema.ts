@@ -107,6 +107,19 @@ export const properties = sqliteTable("properties", {
   organizationIndex: index("property_organization_idx").on(table.organizationId),
 }));
 
+export const responsibleProfiles = sqliteTable("responsibleProfiles", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  organizationId: integer("organizationId").notNull(),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  creci: text("creci"),
+  photoUrl: text("photoUrl"),
+  bio: text("bio"),
+  createdAt: timestamp("createdAt"),
+  updatedAt: timestamp("updatedAt"),
+}, table => ({ organizationIndex: index("responsible_profile_organization_idx").on(table.organizationId) }));
+
 export const shareLinks = sqliteTable("shareLinks", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   organizationId: integer("organizationId").notNull(),

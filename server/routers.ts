@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { auditLogs, organizationInvites, organizationMembers, organizations, properties, shareLinks, users } from "../drizzle/schema";
-import { ensureBrokerProfileColumns, ensureOrganizationColumns, ensurePasswordColumn, ensureShareLinkColumns, getAuditLogs, getDb, getOrganizationForUser, getPhotosBucket, getUserByEmail, writeAuditLog } from "./db";
+import { auditLogs, organizationInvites, organizationMembers, organizations, properties, responsibleProfiles, shareLinks, users } from "../drizzle/schema";
+import { ensureBrokerProfileColumns, ensureOrganizationColumns, ensurePasswordColumn, ensureResponsibleProfilesTable, ensureShareLinkColumns, getAuditLogs, getDb, getOrganizationForUser, getPhotosBucket, getUserByEmail, writeAuditLog } from "./db";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
 import { COOKIE_NAME } from "@shared/const";
@@ -169,6 +169,8 @@ export const appRouter = router({
       if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." });
       await db.delete(shareLinks).where(eq(shareLinks.organizationId, input.organizationId));
       await db.delete(properties).where(eq(properties.organizationId, input.organizationId));
+      await ensureResponsibleProfilesTable();
+      await db.delete(responsibleProfiles).where(eq(responsibleProfiles.organizationId, input.organizationId));
       await db.delete(organizationInvites).where(eq(organizationInvites.organizationId, input.organizationId));
       await db.delete(organizationMembers).where(eq(organizationMembers.organizationId, input.organizationId));
       await db.delete(auditLogs).where(eq(auditLogs.organizationId, input.organizationId));
@@ -201,6 +203,34 @@ export const appRouter = router({
       const grouped = new Map<number, { id: number; name: string | null; email: string | null; whatsapp: string | null; creci: string | null; profilePhotoUrl: string | null; role: string; createdAt: Date; organizations: { id: number; name: string; role: string }[] }>();
       for (const row of rows) { const current = grouped.get(row.id) || { id: row.id, name: row.name, email: row.email, whatsapp: row.whatsapp, creci: row.creci, profilePhotoUrl: row.profilePhotoUrl, role: row.role, createdAt: row.createdAt, organizations: [] }; if (row.organizationId && row.organizationName) current.organizations.push({ id: row.organizationId, name: row.organizationName, role: row.memberRole || "broker" }); grouped.set(row.id, current); }
       return Array.from(grouped.values());
+    }),
+  }),
+
+  responsibleProfiles: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      await ensureResponsibleProfilesTable();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const scope = await requireCompanyAdmin(ctx);
+      return db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, scope.organizationId)).orderBy(responsibleProfiles.name);
+    }),
+    upsert: protectedProcedure.input(z.object({ id: z.number().int().positive().optional(), name: z.string().trim().min(2).max(180), phone: z.string().trim().max(32).optional().default(""), email: z.string().trim().email().or(z.literal("")).optional().default(""), creci: z.string().trim().max(60).optional().default(""), photoUrl: z.string().trim().startsWith("/media/").or(z.literal("")).optional().default(""), bio: z.string().trim().max(1000).optional().default("") })).mutation(async ({ ctx, input }) => {
+      await ensureResponsibleProfilesTable();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const scope = await requireCompanyAdmin(ctx);
+      const values = { organizationId: scope.organizationId, name: input.name, phone: input.phone || null, email: input.email || null, creci: input.creci || null, photoUrl: input.photoUrl || null, bio: input.bio || null, updatedAt: new Date() };
+      if (input.id) await db.update(responsibleProfiles).set(values).where(and(eq(responsibleProfiles.id, input.id), eq(responsibleProfiles.organizationId, scope.organizationId)));
+      else await db.insert(responsibleProfiles).values({ ...values, createdAt: new Date() });
+      return { success: true as const };
+    }),
+    remove: protectedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      await ensureResponsibleProfilesTable();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const scope = await requireCompanyAdmin(ctx);
+      await db.delete(responsibleProfiles).where(and(eq(responsibleProfiles.id, input.id), eq(responsibleProfiles.organizationId, scope.organizationId)));
+      return { success: true as const };
     }),
   }),
 
@@ -245,6 +275,18 @@ export const appRouter = router({
 
   portal: router({
     info: publicProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ input }) => { await ensureOrganizationColumns(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); const [organization] = await db.select().from(organizations).where(eq(organizations.slug, input.slug)).limit(1); if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." }); return { id: organization.id, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, tableType: organization.tableType, developmentName: organization.developmentName }; }),
+    publicCatalog: publicProcedure.input(z.object({ slug: z.string().trim().min(2).max(120), responsible: z.string().trim().max(180).optional() })).query(async ({ input }) => {
+      await ensureOrganizationColumns(); await ensureResponsibleProfilesTable();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const [organization] = await db.select().from(organizations).where(eq(organizations.slug, input.slug)).limit(1);
+      if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." });
+      const profileRows = await db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, organization.id)).orderBy(responsibleProfiles.name);
+      const conditions = [eq(properties.organizationId, organization.id), eq(properties.status, "available"), eq(properties.publicEnabled, 1)];
+      if (input.responsible) conditions.push(eq(properties.responsibleName, input.responsible));
+      const rows = await db.select().from(properties).where(and(...conditions)).orderBy(properties.title);
+      return { organization: { name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, tableType: organization.tableType, developmentName: organization.developmentName }, profiles: profileRows, properties: rows.map(row => parseProperty(row, false)) };
+    }),
     catalog: protectedProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ ctx, input }) => {
       await ensureOrganizationColumns();
       const db = await getDb();
