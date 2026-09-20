@@ -289,8 +289,10 @@ export const appRouter = router({
       const [organization] = await db.select().from(organizations).where(eq(organizations.slug, input.slug)).limit(1);
       if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." });
       const profileRows = await db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, organization.id)).orderBy(responsibleProfiles.name);
+      const profileSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const selectedProfile = input.responsible ? profileRows.find(profile => profile.name === input.responsible || profileSlug(profile.name) === input.responsible) : undefined;
       const conditions = [eq(properties.organizationId, organization.id), eq(properties.status, "available"), eq(properties.publicEnabled, 1)];
-      if (input.responsible) conditions.push(eq(properties.responsibleName, input.responsible));
+      if (selectedProfile) conditions.push(eq(properties.responsibleName, selectedProfile.name));
       const rows = await db.select().from(properties).where(and(...conditions)).orderBy(properties.title);
       return { organization: { name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, tableType: organization.tableType, developmentName: organization.developmentName }, profiles: profileRows, properties: rows.map(row => parseProperty(row, false)) };
     }),

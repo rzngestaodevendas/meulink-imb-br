@@ -7,10 +7,12 @@ import { useRoute } from "wouter";
 type Property = { id: number; code: string; title: string; address: string | null; price: string | null; photos: string[]; details: string[]; responsibleName?: string | null; responsiblePhone?: string | null };
 type Profile = { name: string; phone: string | null; email: string | null; creci: string | null; photoUrl: string | null; bio: string | null };
 export default function PublicCatalog() {
-  const [, params] = useRoute("/tabela/:slug/compartilhar");
+  const [, params] = useRoute("/tabela/:slug/:responsible");
+  const [, allParams] = useRoute("/tabela/:slug/compartilhar");
   const search = new URLSearchParams(window.location.search);
-  const responsible = search.get("responsavel") || undefined;
-  const catalog = trpc.portal.publicCatalog.useQuery({ slug: params?.slug || "", responsible }, { enabled: Boolean(params?.slug) });
+  const slug = params?.slug || allParams?.slug || "";
+  const responsible = params?.responsible && params.responsible !== "compartilhar" ? params.responsible : (search.get("responsavel") || undefined);
+  const catalog = trpc.portal.publicCatalog.useQuery({ slug, responsible }, { enabled: Boolean(slug) });
   if (catalog.isLoading) return <div className="grid min-h-screen place-items-center bg-[#f7f8fa] text-sm text-slate-500">Carregando apresentação...</div>;
   if (catalog.error || !catalog.data) return <div className="grid min-h-screen place-items-center bg-[#f7f8fa] p-5 text-sm text-red-700">Esta apresentação não está disponível.</div>;
   const { organization, profiles, properties } = catalog.data as { organization: { name: string; publicName: string | null; logoUrl: string | null }; profiles: Profile[]; properties: Property[] };
