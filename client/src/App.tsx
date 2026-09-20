@@ -10,6 +10,7 @@ import ManageProperties from "./pages/ManageProperties";
 import Team from "./pages/Team";
 import AuditLog from "./pages/AuditLog";
 import Organizations from "./pages/Organizations";
+import OrganizationDetail from "./pages/OrganizationDetail";
 import BrokerPortal from "./pages/BrokerPortal";
 import AdminUsers from "./pages/AdminUsers";
 
@@ -56,6 +57,7 @@ function Router() {
       <Route path="/painelgestao/equipe" component={ProtectedTeam} />
       <Route path="/painelgestao/auditoria" component={ProtectedAuditLog} />
       <Route path="/painelgestao/construtoras" component={ProtectedOrganizations} />
+      <Route path="/painelgestao/construtoras/:id" component={() => <DashboardLayout><OrganizationDetail /></DashboardLayout>} />
       <Route path="/painelgestao/usuarios" component={ProtectedAdminUsers} />
       <Route path="/app" component={ProtectedApp} />
       <Route path="/app/imoveis" component={ProtectedProperties} />
