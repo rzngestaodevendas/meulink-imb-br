@@ -44,6 +44,7 @@ export async function ensureOrganizationColumns() {
   const binding = getD1Binding();
   if (!binding) throw new Error("Database is not available");
   const columns = [
+    ["entityType", "TEXT NOT NULL DEFAULT 'construtora'"],
     ["logoUrl", "TEXT"],
     ["contactName", "TEXT"],
     ["contactPhone", "TEXT"],

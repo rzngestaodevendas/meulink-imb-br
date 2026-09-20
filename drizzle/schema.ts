@@ -25,6 +25,7 @@ export const users = sqliteTable("users", {
 export const organizations = sqliteTable("organizations", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   slug: text("slug").notNull().unique(),
+  entityType: text("entityType", { enum: ["construtora", "imobiliaria", "corretor"] }).notNull().default("construtora"),
   name: text("name").notNull(),
   publicName: text("publicName"),
   logoUrl: text("logoUrl"),
