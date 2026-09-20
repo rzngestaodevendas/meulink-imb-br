@@ -154,6 +154,9 @@ export const appRouter = router({
       if (!createdOrganization) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível criar a construtora." });
       const organizationId = createdOrganization.id;
       await db.insert(organizationMembers).values({ organizationId, userId: ctx.user.id, role: "company_admin" });
+      await ensureResponsibleProfilesTable();
+      const initialProfiles = [{ name: input.contactName, phone: input.contactPhone }, { name: input.secondaryContactName, phone: input.secondaryContactPhone }].filter(profile => profile.name.trim().length >= 2).map(profile => ({ organizationId, name: profile.name.trim(), phone: profile.phone?.trim() || null, email: null, creci: null, photoUrl: null, bio: null, createdAt: new Date(), updatedAt: new Date() }));
+      if (initialProfiles.length) await db.insert(responsibleProfiles).values(initialProfiles);
       await db.update(users).set({ activeOrganizationId: organizationId }).where(eq(users.id, ctx.user.id));
       await recordAudit(ctx, organizationId, "organization.created", "organization", organizationId, { name: input.name });
       return { id: organizationId, name: input.name, publicName: input.publicName || input.name };
