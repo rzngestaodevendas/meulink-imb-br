@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { organizationInvites, organizationMembers, organizations, properties, shareLinks, users } from "../drizzle/schema";
+import { auditLogs, organizationInvites, organizationMembers, organizations, properties, shareLinks, users } from "../drizzle/schema";
 import { ensureBrokerProfileColumns, ensureOrganizationColumns, ensurePasswordColumn, ensureShareLinkColumns, getAuditLogs, getDb, getOrganizationForUser, getPhotosBucket, getUserByEmail, writeAuditLog } from "./db";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
@@ -160,6 +160,22 @@ export const appRouter = router({
     }),
 
     update: protectedProcedure.input(z.object({ organizationId: z.number().int().positive(), entityType: z.enum(["construtora", "imobiliaria", "corretor"]).default("construtora"), name: z.string().trim().min(2).max(180), publicName: z.string().trim().max(180), logoUrl: z.string().trim().url().or(z.string().trim().startsWith("/media/")).or(z.literal("")), contactName: z.string().trim().max(180), contactPhone: z.string().trim().max(32), secondaryContactName: z.string().trim().max(180), secondaryContactPhone: z.string().trim().max(32), contactEmail: z.string().trim().email().or(z.literal("")), contactAddress: z.string().trim().max(500), websiteUrl: z.string().trim().url().or(z.literal("")), tableType: z.enum(["third_party", "own_development"]), developmentName: z.string().trim().max(180), developmentDescription: z.string().trim().max(2000) })).mutation(async ({ ctx, input }) => { await ensureOrganizationColumns(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); if (ctx.user.role !== "admin") await requireCompanyAdmin(ctx); await db.update(organizations).set({ entityType: input.entityType, name: input.name, publicName: input.publicName || input.name, logoUrl: input.logoUrl || null, contactName: input.contactName || null, contactPhone: input.contactPhone || null, secondaryContactName: input.secondaryContactName || null, secondaryContactPhone: input.secondaryContactPhone || null, contactEmail: input.contactEmail || null, contactAddress: input.contactAddress || null, websiteUrl: input.websiteUrl || null, tableType: input.tableType, developmentName: input.developmentName || null, developmentDescription: input.developmentDescription || null }).where(eq(organizations.id, input.organizationId)); return { success: true as const }; }),
+
+    delete: protectedProcedure.input(z.object({ organizationId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Somente o administrador pode excluir uma tabela." });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const [organization] = await db.select({ id: organizations.id, name: organizations.name }).from(organizations).where(eq(organizations.id, input.organizationId)).limit(1);
+      if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." });
+      await db.delete(shareLinks).where(eq(shareLinks.organizationId, input.organizationId));
+      await db.delete(properties).where(eq(properties.organizationId, input.organizationId));
+      await db.delete(organizationInvites).where(eq(organizationInvites.organizationId, input.organizationId));
+      await db.delete(organizationMembers).where(eq(organizationMembers.organizationId, input.organizationId));
+      await db.delete(auditLogs).where(eq(auditLogs.organizationId, input.organizationId));
+      await db.delete(organizations).where(eq(organizations.id, input.organizationId));
+      await db.update(users).set({ activeOrganizationId: null }).where(eq(users.activeOrganizationId, input.organizationId));
+      return { success: true as const, name: organization.name };
+    }),
 
     uploadLogo: protectedProcedure.input(z.object({ fileName: z.string().trim().min(1).max(160), contentType: z.enum(["image/jpeg", "image/png", "image/webp", "image/svg+xml"]), data: z.string().min(100).max(12_000_000) })).mutation(async ({ ctx, input }) => { const bucket = getPhotosBucket(); if (!bucket) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Armazenamento indisponível." }); if (ctx.user.role !== "admin") await requireCompanyAdmin(ctx); const encoded = input.data.includes(",") ? input.data.split(",", 2)[1] : input.data; const binary = atob(encoded); const bytes = new Uint8Array(binary.length); for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index); const safeName = input.fileName.toLowerCase().replace(/[^a-z0-9.-]+/g, "-").slice(-100) || "logo.png"; const key = `organizations/${Date.now()}-${nanoid(8)}-${safeName}`; await bucket.put(key, bytes, { httpMetadata: { contentType: input.contentType, cacheControl: "public, max-age=31536000, immutable" } }); return { url: `/media/${key}` }; }),
 

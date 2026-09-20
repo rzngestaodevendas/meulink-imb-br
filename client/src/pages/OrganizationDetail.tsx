@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ManageProperties from "./ManageProperties";
-import { ArrowLeft, Building2, ExternalLink, Pencil, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Building2, ExternalLink, Pencil, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useLocation, useRoute } from "wouter";
 
@@ -17,6 +17,7 @@ export default function OrganizationDetail() {
   const id = Number(params?.id || 0);
   const organizations = trpc.organizations.list.useQuery();
   const select = trpc.organizations.select.useMutation();
+  const deleteOrganization = trpc.organizations.delete.useMutation({ onSuccess: () => setLocation("/painelgestao/construtoras") });
   const selected = useRef(false);
   const organization = (organizations.data as Organization[] | undefined)?.find(item => item.id === id);
 
@@ -35,7 +36,7 @@ export default function OrganizationDetail() {
     <header className="mb-6 overflow-hidden rounded-3xl bg-[#102c3d] px-6 py-7 text-white shadow-xl sm:px-8">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-4"><div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg">{organization.logoUrl ? <img src={organization.logoUrl} alt={`Logo ${organization.name}`} className="h-full w-full object-contain" /> : <Building2 className="h-8 w-8 text-[#102c3d]" />}</div><div><p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#d7b874]">{entityLabels[entity]} · tabela própria</p><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{organization.publicName || organization.name}</h1><p className="mt-2 text-sm text-white/70">Gerencie os dados da tabela e o estoque de imóveis desta operação.</p></div></div>
-        <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => setLocation("/painelgestao/construtoras")} className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"><ArrowLeft className="h-4 w-4" /> Tabelas</Button><Button variant="outline" onClick={() => setLocation(`/painelgestao/construtoras?editar=${organization.id}`)} className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"><Pencil className="h-4 w-4" /> Editar dados</Button><a href={`/${organization.slug}`} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-md bg-[#d7b874] px-4 text-sm font-semibold text-[#102c3d] hover:bg-[#e6cc94]"><ExternalLink className="h-4 w-4" /> Página pública</a></div>
+        <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => setLocation("/painelgestao/construtoras")} className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"><ArrowLeft className="h-4 w-4" /> Tabelas</Button><Button variant="outline" onClick={() => setLocation(`/painelgestao/construtoras?editar=${organization.id}`)} className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"><Pencil className="h-4 w-4" /> Editar dados</Button><a href={`/${organization.slug}`} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-md bg-[#d7b874] px-4 text-sm font-semibold text-[#102c3d] hover:bg-[#e6cc94]"><ExternalLink className="h-4 w-4" /> Página pública</a><Button variant="outline" disabled={deleteOrganization.isPending} onClick={() => { if (window.confirm(`Excluir permanentemente a tabela ${organization.name}? Os imóveis, links e membros também serão excluídos.`)) deleteOrganization.mutate({ organizationId: organization.id }); }} className="gap-2 border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800"><Trash2 className="h-4 w-4" /> Excluir tabela</Button></div>
       </div>
     </header>
     <Card className="mb-6 border-0 shadow-sm"><CardContent className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4"><div><p className="text-xs uppercase tracking-[0.14em] text-slate-500">Tipo</p><p className="mt-1 font-semibold text-[#102c3d]">{entityLabels[entity]}</p></div><div><p className="text-xs uppercase tracking-[0.14em] text-slate-500">Imóveis disponíveis</p><p className="mt-1 font-semibold text-[#102c3d]">{organization.availablePropertyCount ?? 0}</p></div><div><p className="text-xs uppercase tracking-[0.14em] text-slate-500">Responsável</p><p className="mt-1 font-semibold text-[#102c3d]">{organization.contactName || "Não informado"}</p><p className="text-xs text-slate-500">{organization.contactPhone || ""}</p></div><div><p className="text-xs uppercase tracking-[0.14em] text-slate-500">Link público</p><p className="mt-1 truncate text-sm font-semibold text-[#b38b3d]">/{organization.slug}</p></div></CardContent></Card>
