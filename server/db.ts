@@ -101,8 +101,10 @@ export async function ensurePropertyPrivateColumns() {
   if (_propertyPrivateColumnsReady) return;
   const binding = getD1Binding();
   if (!binding) throw new Error("Database is not available");
-  try { await binding.prepare("ALTER TABLE properties ADD COLUMN commission TEXT").run(); }
-  catch (error) { if (!String(error).toLowerCase().includes("duplicate column")) throw error; }
+  for (const [name, type] of [["commission", "TEXT"], ["bedrooms", "INTEGER"], ["privateArea", "TEXT"], ["developmentInfo", "TEXT"], ["mapUrl", "TEXT"]]) {
+    try { await binding.prepare(`ALTER TABLE properties ADD COLUMN ${name} ${type}`).run(); }
+    catch (error) { if (!String(error).toLowerCase().includes("duplicate column")) throw error; }
+  }
   _propertyPrivateColumnsReady = true;
 }
 
