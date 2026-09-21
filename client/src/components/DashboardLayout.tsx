@@ -32,7 +32,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       <div className="mx-auto flex min-h-[3.75rem] max-w-[1600px] items-center gap-2 px-3 sm:min-h-[4.5rem] sm:gap-4 sm:px-6 lg:px-8">
         <button type="button" onClick={() => setLocation("/painelgestao/construtoras")} className="flex shrink-0 items-center gap-3 rounded-xl px-1 py-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d7b874]">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#102c3d] text-[#d7b874] shadow-sm sm:h-10 sm:w-10"><Building2 className="h-4 w-4 sm:h-5 sm:w-5" /></span>
-          <span className="hidden sm:block"><span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[#b38b3d]">MeuLink</span><span className="block text-sm font-semibold text-[#102c3d]">Painel de gestão</span></span>
+          <span className="block"><span className="block text-[9px] font-bold uppercase tracking-[0.18em] text-[#b38b3d] sm:text-[10px] sm:tracking-[0.2em]">MeuLink</span><span className="block text-xs font-semibold text-[#102c3d] sm:text-sm">Painel de gestão</span></span>
         </button>
         <span className="hidden h-8 w-px bg-slate-200 lg:block" />
         <nav className="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto py-1 md:flex" aria-label="Navegação principal">
