@@ -47,7 +47,7 @@ export default function PublicCatalog() {
             <h1 className="text-3xl font-semibold tracking-tight text-[#102c3d] sm:text-4xl lg:text-5xl">{organizationName}</h1>
             <p className="mt-2 text-sm font-semibold uppercase tracking-[0.16em] text-[#8e6d31]">Tabela de Imóveis</p>
           </div>
-          {primaryPhone && <a href={`https://wa.me/${primaryPhone}?text=${encodeURIComponent(`Olá, gostaria de informações sobre os imóveis${profile ? ` de ${profile.name}` : ""}.`)}`} target="_blank" rel="noreferrer" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#20bd63] px-5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#12934a]"><MessageCircle className="h-5 w-5" /> Falar no WhatsApp</a>}
+          {primaryPhone && !profile && <a href={`https://wa.me/${primaryPhone}?text=${encodeURIComponent("Olá, gostaria de informações sobre os imóveis.")}`} target="_blank" rel="noreferrer" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#20bd63] px-5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#12934a]"><MessageCircle className="h-5 w-5" /> Falar no WhatsApp</a>}
         </div>
       </header>
 
