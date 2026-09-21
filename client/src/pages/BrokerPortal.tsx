@@ -31,7 +31,10 @@ export default function BrokerPortal() {
   const slug = params?.slug || friendlyParams?.slug || "";
   const { user, loading, isAuthenticated, logout } = useAuth();
   const info = trpc.portal.info.useQuery({ slug }, { enabled: Boolean(slug), staleTime: 60_000 });
-  const [authMode, setAuthMode] = useState<"login" | "register" | "forgot">("login");
+  const [authMode, setAuthMode] = useState<"login" | "register" | "forgot">(() => {
+    const access = new URLSearchParams(window.location.search).get("acesso");
+    return access === "cadastro" ? "register" : access === "recuperar" ? "forgot" : "login";
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, CheckCircle2, Copy, ExternalLink, Link2, LogIn, MapPin, MessageCircle, Sparkles } from "lucide-react";
+import { Building2, CheckCircle2, Copy, ExternalLink, Link2, LockKeyhole, LogIn, MapPin, MessageCircle, Sparkles, UserPlus } from "lucide-react";
 import { useRoute } from "wouter";
 import { toast } from "sonner";
 
@@ -63,6 +63,10 @@ export default function PublicCatalog() {
 
       <section className="mb-8 rounded-3xl border border-[#dce8df] bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-start gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#102c3d] text-white"><Link2 className="h-5 w-5" /></div><div><h2 className="text-base font-bold text-[#102c3d]">Como compartilhar estes imóveis</h2><p className="mt-1 text-sm leading-relaxed text-slate-600">O link desta página é público. Para enviar um imóvel com a sua foto, nome, CRECI e WhatsApp, entre no portal da tabela e gere a assinatura. Se preferir, copie o link sem assinatura: ele exibirá somente os dados públicos autorizados do imóvel.</p></div></div>
+      </section>
+
+      <section className="mb-10 overflow-hidden rounded-3xl bg-[#102c3d] p-5 text-white shadow-[0_18px_45px_rgba(16,44,61,0.16)] sm:p-7">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between"><div className="max-w-2xl"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#f0d99e]">Área do corretor</p><h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Compartilhe com a sua assinatura profissional</h2><p className="mt-2 text-sm leading-relaxed text-white/70">Entre para gerar links com seu nome, foto, CRECI e WhatsApp. Ainda não possui acesso? Faça seu cadastro gratuito nesta tabela.</p></div><div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto lg:min-w-[480px]"><a href={`${publicBase}?acesso=login`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#20bd63] px-4 py-3 text-center text-xs font-bold text-white transition hover:bg-[#12934a]"><LogIn className="h-4 w-4" /> Entrar</a><a href={`${publicBase}?acesso=cadastro`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-center text-xs font-bold text-[#102c3d] transition hover:bg-[#f0d99e]"><UserPlus className="h-4 w-4" /> Fazer cadastro</a><a href={`${publicBase}?acesso=recuperar`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/25 px-4 py-3 text-center text-xs font-semibold text-white transition hover:bg-white/10"><LockKeyhole className="h-4 w-4" /> Esqueci a senha</a></div></div>
       </section>
 
       <section>
