@@ -37,12 +37,12 @@ export default function PublicCatalog() {
   return <div className="min-h-screen bg-[#f5f7f8] text-[#102c3d]">
     <div className="h-1.5 bg-gradient-to-r from-[#102c3d] via-[#d7b874] to-[#20bd63]" />
     <main className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
-      <header className="relative mb-8 overflow-hidden rounded-[2rem] bg-[#102c3d] px-6 py-8 text-white shadow-[0_24px_70px_rgba(16,44,61,0.22)] sm:px-10 sm:py-10 lg:px-14 lg:py-12">
+      <header className="relative mb-8 overflow-hidden rounded-2xl bg-[#102c3d] px-4 py-5 text-white sm:rounded-[2rem] sm:px-10 sm:py-10 shadow-[0_24px_70px_rgba(16,44,61,0.22)] sm:px-10 sm:py-10 lg:px-14 lg:py-12">
         <div className="pointer-events-none absolute -right-20 -top-24 h-80 w-80 rounded-full bg-[#d7b874]/15 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-[#20bd63]/10 blur-3xl" />
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <div className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-[1.6rem] border border-white/60 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.2)] sm:h-36 sm:w-36 sm:rounded-[1.9rem] sm:p-4">
+            <div className="grid h-20 w-20 shrink-0 sm:h-36 sm:w-36 place-items-center overflow-hidden rounded-[1.6rem] border border-white/60 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.2)] sm:rounded-[1.9rem] sm:p-4">
               {organization.logoUrl ? <img src={organization.logoUrl} alt={`Logo ${organizationName}`} className="h-full w-full object-contain" /> : <Building2 className="h-12 w-12 text-[#102c3d]" />}
             </div>
             <div>
