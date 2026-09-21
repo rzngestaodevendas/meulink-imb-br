@@ -75,6 +75,7 @@ export const properties = mysqlTable("properties", {
   price: varchar("price", { length: 80 }),
   notes: text("notes"),
   photos: text("photos").notNull(),
+  crmData: text("crmData"),
   sourceDriveUrl: text("sourceDriveUrl"),
   sourcePage: int("sourcePage"),
   status: mysqlEnum("status", ["available", "reserved", "sold", "unavailable", "updating", "hidden"]).default("available").notNull(),

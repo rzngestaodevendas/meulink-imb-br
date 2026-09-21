@@ -21,6 +21,7 @@ export const propertyPayload = z.object({
   price: z.string().trim().max(80).optional().default(""),
   notes: z.string().trim().max(5000).optional().default(""),
   photos: z.array(z.string().trim().url().or(z.string().trim().startsWith("/manus-storage/"))).max(30),
+  crmData: z.record(z.string(), z.unknown()).optional().default({}),
   status: statusSchema,
   publicEnabled: z.boolean(),
 });
@@ -35,16 +36,33 @@ export const inviteInput = z.object({ email: z.string().trim().email().max(320),
 export const auditActionSchema = z.enum(["organization.created", "organization.selected", "property.created", "property.bulk_created", "property.updated", "property.archived", "share_link.created", "team.invite_created", "team.invite_revoked", "team.invite_accepted", "team.role_updated", "team.member_removed"]);
 
 function parseProperty(row: typeof properties.$inferSelect, includeInternal = true) {
+  const crm = (() => { try { return JSON.parse(row.crmData || "{}"); } catch { return {}; } })() as Record<string, any>;
+  const visibility = crm.visibility || {};
+  const fullAddress = [crm.street, crm.number, crm.complement, crm.neighborhood, crm.city, crm.state].filter(Boolean).join(", ") || row.address;
+  const publicCrm = {
+    ...crm,
+    condoFee: visibility.condoFee ? crm.condoFee : "",
+    propertyTax: visibility.propertyTax ? crm.propertyTax : "",
+    quadraLote: visibility.quadraLote ? crm.quadraLote : "",
+    developmentName: visibility.development ? crm.developmentName : "",
+    developmentType: visibility.development ? crm.developmentType : "",
+    developmentDescription: visibility.development ? crm.developmentDescription : "",
+    developmentPhotos: visibility.development ? (crm.developmentPhotos || []) : [],
+    mapUrl: visibility.map ? crm.mapUrl : "",
+    latitude: visibility.map ? crm.latitude : "",
+    longitude: visibility.map ? crm.longitude : "",
+  };
   return {
     id: row.id,
     slug: row.slug,
     title: row.title,
-    address: row.address,
+    address: includeInternal ? row.address : (visibility.address ? fullAddress : [crm.neighborhood, crm.city, crm.state].filter(Boolean).join(", ") || "Endereço sob consulta"),
     ...(includeInternal ? { responsibleName: row.responsibleName, responsiblePhone: row.responsiblePhone } : {}),
     details: JSON.parse(row.details || "[]") as string[],
     price: row.price,
     notes: row.notes,
     photos: JSON.parse(row.photos || "[]") as string[],
+    crm: includeInternal ? crm : publicCrm,
     ...(includeInternal ? { sourceDriveUrl: row.sourceDriveUrl } : {}),
     status: row.status,
     publicEnabled: Boolean(row.publicEnabled),
@@ -183,7 +201,7 @@ export const appRouter = router({
       const scope = await requireCompanyAdmin(ctx);
       const baseSlug = input.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 150) || `imovel-${nanoid(8)}`;
       const slug = `${baseSlug}-${nanoid(5).toLowerCase()}`;
-      const [result] = await db.insert(properties).values({ organizationId: scope.organizationId, slug, title: input.title, address: input.address, responsibleName: input.responsibleName, responsiblePhone: input.responsiblePhone, details: JSON.stringify(input.details), price: input.price, notes: input.notes, photos: JSON.stringify(input.photos), status: input.status, publicEnabled: input.publicEnabled ? 1 : 0 });
+      const [result] = await db.insert(properties).values({ organizationId: scope.organizationId, slug, title: input.title, address: input.address, responsibleName: input.responsibleName, responsiblePhone: input.responsiblePhone, details: JSON.stringify(input.details), price: input.price, notes: input.notes, photos: JSON.stringify(input.photos), crmData: JSON.stringify(input.crmData), status: input.status, publicEnabled: input.publicEnabled ? 1 : 0 });
       const [created] = await db.select().from(properties).where(eq(properties.id, Number(result.insertId))).limit(1);
       if (!created) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível carregar o imóvel criado." });
       await recordAudit(ctx, scope.organizationId, "property.created", "property", created.id, { title: created.title });
@@ -196,7 +214,7 @@ export const appRouter = router({
       const scope = await requireCompanyAdmin(ctx);
       const values = input.rows.map(row => {
         const baseSlug = row.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 150) || `imovel-${nanoid(8)}`;
-        return { organizationId: scope.organizationId, slug: `${baseSlug}-${nanoid(5).toLowerCase()}`, title: row.title, address: row.address, responsibleName: row.responsibleName, responsiblePhone: row.responsiblePhone, details: JSON.stringify(row.details), price: row.price, notes: row.notes, photos: JSON.stringify(row.photos), status: row.status, publicEnabled: row.publicEnabled ? 1 : 0 };
+        return { organizationId: scope.organizationId, slug: `${baseSlug}-${nanoid(5).toLowerCase()}`, title: row.title, address: row.address, responsibleName: row.responsibleName, responsiblePhone: row.responsiblePhone, details: JSON.stringify(row.details), price: row.price, notes: row.notes, photos: JSON.stringify(row.photos), crmData: JSON.stringify(row.crmData), status: row.status, publicEnabled: row.publicEnabled ? 1 : 0 };
       });
       await db.insert(properties).values(values);
       await recordAudit(ctx, scope.organizationId, "property.bulk_created", "property", undefined, { count: values.length });
@@ -209,7 +227,7 @@ export const appRouter = router({
       const scope = await requireCompanyAdmin(ctx);
       const [existing] = await db.select().from(properties).where(and(eq(properties.id, input.id), eq(properties.organizationId, scope.organizationId))).limit(1);
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Imóvel não encontrado." });
-      await db.update(properties).set({ title: input.data.title, address: input.data.address, responsibleName: input.data.responsibleName, responsiblePhone: input.data.responsiblePhone, details: JSON.stringify(input.data.details), price: input.data.price, notes: input.data.notes, photos: JSON.stringify(input.data.photos), status: input.data.status, publicEnabled: input.data.publicEnabled ? 1 : 0 }).where(eq(properties.id, input.id));
+      await db.update(properties).set({ title: input.data.title, address: input.data.address, responsibleName: input.data.responsibleName, responsiblePhone: input.data.responsiblePhone, details: JSON.stringify(input.data.details), price: input.data.price, notes: input.data.notes, photos: JSON.stringify(input.data.photos), crmData: JSON.stringify(input.data.crmData), status: input.data.status, publicEnabled: input.data.publicEnabled ? 1 : 0 }).where(eq(properties.id, input.id));
       const [updated] = await db.select().from(properties).where(eq(properties.id, input.id)).limit(1);
       await recordAudit(ctx, scope.organizationId, "property.updated", "property", input.id, { title: input.data.title, status: input.data.status });
       return parseProperty(updated!);

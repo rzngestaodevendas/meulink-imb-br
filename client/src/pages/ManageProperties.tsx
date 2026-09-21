@@ -6,19 +6,20 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, Check, Edit3, GripVertical, ImagePlus, Plus, Save, Archive, Star, Trash2, UploadCloud, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { blankCrm, normalizeCrm, PropertyCrmFields, type PropertyCrmData } from "@/components/PropertyCrmFields";
 
 type Status = "available" | "reserved" | "sold" | "unavailable" | "updating" | "hidden";
-type Property = { id: number; slug: string; title: string; address: string | null; responsibleName?: string | null; responsiblePhone?: string | null; details: string[]; price: string | null; notes: string | null; photos: string[]; status: Status; publicEnabled: boolean; sourceDriveUrl?: string | null };
-type FormState = { title: string; address: string; responsibleName: string; responsiblePhone: string; details: string; price: string; notes: string; photos: string[]; status: Status; publicEnabled: boolean };
+type Property = { id: number; slug: string; title: string; address: string | null; responsibleName?: string | null; responsiblePhone?: string | null; details: string[]; price: string | null; notes: string | null; photos: string[]; crm?: Partial<PropertyCrmData>; status: Status; publicEnabled: boolean; sourceDriveUrl?: string | null };
+type FormState = { title: string; address: string; responsibleName: string; responsiblePhone: string; details: string; price: string; notes: string; photos: string[]; crmData: PropertyCrmData; status: Status; publicEnabled: boolean };
 
 const statusLabels: Record<Status, string> = { available: "Disponível", reserved: "Reservado", sold: "Vendido", unavailable: "Indisponível", updating: "Em atualização", hidden: "Arquivado" };
-const blankForm: FormState = { title: "", address: "", responsibleName: "", responsiblePhone: "", details: "", price: "", notes: "", photos: [], status: "available", publicEnabled: true };
+const blankForm: FormState = { title: "", address: "", responsibleName: "", responsiblePhone: "", details: "", price: "", notes: "", photos: [], crmData: blankCrm, status: "available", publicEnabled: true };
 const MAX_PHOTOS = 30;
 const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
 
 function toForm(property?: Property): FormState {
   if (!property) return blankForm;
-  return { title: property.title, address: property.address || "", responsibleName: property.responsibleName || "", responsiblePhone: property.responsiblePhone || "", details: property.details.join("\n"), price: property.price || "", notes: property.notes || "", photos: property.photos, status: property.status, publicEnabled: property.publicEnabled };
+  return { title: property.title, address: property.address || "", responsibleName: property.responsibleName || "", responsiblePhone: property.responsiblePhone || "", details: property.details.join("\n"), price: property.price || "", notes: property.notes || "", photos: property.photos, crmData: normalizeCrm(property.crm), status: property.status, publicEnabled: property.publicEnabled };
 }
 
 function parseTable(text: string) {
@@ -118,7 +119,8 @@ export default function ManageProperties() {
   function openEdit(property: Property) { setEditing(property.id); setForm(toForm(property)); }
   function submit(event: React.FormEvent) {
     event.preventDefault();
-    const data = { title: form.title, address: form.address, responsibleName: form.responsibleName, responsiblePhone: form.responsiblePhone, details: form.details.split("\n").map(item => item.trim()).filter(Boolean), price: form.price, notes: form.notes, photos: form.photos, status: form.status, publicEnabled: form.publicEnabled };
+    const crmAddress = [form.crmData.street, form.crmData.number, form.crmData.complement, form.crmData.neighborhood, form.crmData.city, form.crmData.state].filter(Boolean).join(", ");
+    const data = { title: form.title, address: form.address || crmAddress, responsibleName: form.responsibleName, responsiblePhone: form.responsiblePhone, details: form.details.split("\n").map(item => item.trim()).filter(Boolean), price: form.price || form.crmData.salePrice || form.crmData.rentPrice, notes: form.notes, photos: form.photos, crmData: form.crmData, status: form.status, publicEnabled: form.publicEnabled };
     if (editing === "new") create.mutate(data); else if (typeof editing === "number") update.mutate({ id: editing, data });
   }
   async function handleUpload(input: { fileName: string; contentType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" | "image/avif"; base64: string }) { setUploading(true); try { return await uploadImage.mutateAsync(input); } finally { setUploading(false); } }
@@ -134,6 +136,7 @@ export default function ManageProperties() {
       <label className="grid gap-2 text-sm font-medium">Responsável interno<Input value={form.responsibleName} onChange={event => setForm({ ...form, responsibleName: event.target.value })} placeholder="Nome do responsável pelo imóvel" /></label>
       <label className="grid gap-2 text-sm font-medium">WhatsApp interno<Input value={form.responsiblePhone} onChange={event => setForm({ ...form, responsiblePhone: event.target.value })} placeholder="Não aparece na landing pública" /></label>
       <label className="grid gap-2 text-sm font-medium">Características <span className="text-xs font-normal text-slate-500">Uma por linha</span><textarea value={form.details} onChange={event => setForm({ ...form, details: event.target.value })} className="min-h-28 rounded-md border bg-background px-3 py-2 text-sm" placeholder={'03 dormitórios\n101,25 M²\nBox'} /></label>
+      <PropertyCrmFields value={form.crmData} onChange={crmData => setForm({ ...form, crmData })} uploadImage={handleUpload} />
       <PhotoGalleryEditor photos={form.photos} onChange={photos => setForm({ ...form, photos })} uploadImage={handleUpload} uploading={uploading} />
       <label className="grid gap-2 text-sm font-medium">Status<select value={form.status} onChange={event => setForm({ ...form, status: event.target.value as Status })} className="h-10 rounded-md border bg-background px-3 text-sm">{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label className="grid gap-2 text-sm font-medium">Observações<textarea value={form.notes} onChange={event => setForm({ ...form, notes: event.target.value })} className="min-h-10 rounded-md border bg-background px-3 py-2 text-sm" placeholder="Informações internas ou comerciais" /></label>
