@@ -257,11 +257,20 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const scope = await requireCompanyAdmin(ctx);
-      const rows = await db.select({ memberId: organizationMembers.id, userId: users.id, name: users.name, email: users.email, role: organizationMembers.role, createdAt: organizationMembers.createdAt })
+      const rows = await db.select({ memberId: organizationMembers.id, userId: users.id, name: users.name, email: users.email, profilePhoto: users.profilePhoto, role: organizationMembers.role, createdAt: organizationMembers.createdAt })
         .from(organizationMembers)
         .innerJoin(users, eq(organizationMembers.userId, users.id))
         .where(eq(organizationMembers.organizationId, scope.organizationId));
       return rows;
+    }),
+    updateProfile: protectedProcedure.input(z.object({ memberId: z.number().int().positive(), name: z.string().trim().min(2).max(180), profilePhoto: z.string().trim().url().or(z.string().startsWith("/manus-storage/")).optional().default("") })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const scope = await requireCompanyAdmin(ctx);
+      const [member] = await db.select().from(organizationMembers).where(and(eq(organizationMembers.id, input.memberId), eq(organizationMembers.organizationId, scope.organizationId))).limit(1);
+      if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Membro não encontrado." });
+      await db.update(users).set({ name: input.name, profilePhoto: input.profilePhoto || null }).where(eq(users.id, member.userId));
+      return { success: true as const };
     }),
 
     createInvite: protectedProcedure.input(inviteInput).mutation(async ({ ctx, input }) => {

@@ -8,6 +8,7 @@
     { "idx": 3, "version": "5", "when": 1789838150598, "tag": "0003_wakeful_zaran", "breakpoints": true },
     { "idx": 4, "version": "5", "when": 1789839057012, "tag": "0004_colossal_cassandra_nova", "breakpoints": true },
     { "idx": 5, "version": "5", "when": 1789840818208, "tag": "0005_spooky_betty_ross", "breakpoints": true },
-    { "idx": 6, "version": "5", "when": 1789842000000, "tag": "0006_complete_crm_property", "breakpoints": true }
+    { "idx": 6, "version": "5", "when": 1789842000000, "tag": "0006_complete_crm_property", "breakpoints": true },
+    { "idx": 7, "version": "5", "when": 1789842600000, "tag": "0007_broker_profile_photo", "breakpoints": true }
   ]
 }
