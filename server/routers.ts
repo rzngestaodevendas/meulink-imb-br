@@ -287,7 +287,7 @@ export const appRouter = router({
       const propertyId = Number(input.code.replace(/\D/g, ""));
       const [row] = await db.select({ property: properties, organization: organizations }).from(properties).innerJoin(organizations, eq(properties.organizationId, organizations.id)).where(and(eq(properties.id, propertyId), eq(properties.publicEnabled, 1), eq(properties.status, "available"))).limit(1);
       if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Imóvel não encontrado ou indisponível." });
-      return { property: parseProperty(row.property, false), broker: null, organization: { name: row.organization.publicName || row.organization.name, logoUrl: row.organization.logoUrl, contactName: row.organization.contactName, contactPhone: row.organization.contactPhone, tableType: row.organization.tableType, developmentName: row.organization.developmentName } };
+      return { property: parseProperty(row.property, false), broker: null, organization: { slug: row.organization.slug, name: row.organization.publicName || row.organization.name, logoUrl: row.organization.logoUrl, contactName: row.organization.contactName, contactPhone: row.organization.contactPhone, tableType: row.organization.tableType, developmentName: row.organization.developmentName } };
     }),
 
     publicFriendlyLink: publicProcedure.input(z.object({ code: z.string().regex(/^ML-\d+$/i), brokerSlug: z.string().trim().min(2).max(120) })).query(async ({ input }) => {
@@ -299,7 +299,7 @@ export const appRouter = router({
       const slugify = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       const row = rows.reverse().find(item => slugify(item.link.brokerName) === input.brokerSlug);
       if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Assinatura do corretor não encontrada ou expirada." });
-      return { property: parseProperty(row.property, false), broker: { name: row.link.brokerName, phone: row.link.brokerPhone, photoUrl: row.link.brokerPhotoUrl }, organization: { name: row.organization.publicName || row.organization.name, logoUrl: row.organization.logoUrl, contactName: row.organization.contactName, contactPhone: row.organization.contactPhone, tableType: row.organization.tableType, developmentName: row.organization.developmentName } };
+      return { property: parseProperty(row.property, false), broker: { name: row.link.brokerName, phone: row.link.brokerPhone, photoUrl: row.link.brokerPhotoUrl }, organization: { slug: row.organization.slug, name: row.organization.publicName || row.organization.name, logoUrl: row.organization.logoUrl, contactName: row.organization.contactName, contactPhone: row.organization.contactPhone, tableType: row.organization.tableType, developmentName: row.organization.developmentName } };
     }),
 
     publicLink: publicProcedure.input(z.object({ token: z.string().trim().min(8).max(80) })).query(async ({ input }) => {
@@ -309,7 +309,7 @@ export const appRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const [link] = await db.select({ link: shareLinks, property: properties, organization: organizations }).from(shareLinks).innerJoin(properties, eq(shareLinks.propertyId, properties.id)).innerJoin(organizations, eq(shareLinks.organizationId, organizations.id)).where(and(eq(shareLinks.token, input.token), eq(shareLinks.enabled, 1), eq(properties.publicEnabled, 1), eq(properties.status, "available"))).limit(1);
       if (!link) throw new TRPCError({ code: "NOT_FOUND", message: "Link de imóvel inválido ou expirado" });
-      return { property: parseProperty(link.property, false), broker: { name: link.link.brokerName, phone: link.link.brokerPhone, photoUrl: link.link.brokerPhotoUrl }, organization: { name: link.organization.publicName || link.organization.name, logoUrl: link.organization.logoUrl, contactName: link.organization.contactName, contactPhone: link.organization.contactPhone, tableType: link.organization.tableType, developmentName: link.organization.developmentName } };
+      return { property: parseProperty(link.property, false), broker: { name: link.link.brokerName, phone: link.link.brokerPhone, photoUrl: link.link.brokerPhotoUrl }, organization: { slug: link.organization.slug, name: link.organization.publicName || link.organization.name, logoUrl: link.organization.logoUrl, contactName: link.organization.contactName, contactPhone: link.organization.contactPhone, tableType: link.organization.tableType, developmentName: link.organization.developmentName } };
     }),
   }),
 
