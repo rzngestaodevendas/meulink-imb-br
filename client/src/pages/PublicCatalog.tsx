@@ -37,17 +37,23 @@ export default function PublicCatalog() {
   return <div className="min-h-screen bg-[#f5f7f8] text-[#102c3d]">
     <div className="h-1.5 bg-gradient-to-r from-[#102c3d] via-[#d7b874] to-[#20bd63]" />
     <main className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
-      <header className="relative mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white px-4 py-7 text-center shadow-[0_18px_50px_rgba(16,44,61,0.08)] sm:rounded-[2rem] sm:px-10 sm:py-10 lg:px-14 lg:py-12">
-        <div className="relative flex flex-col items-center gap-5">
-          <div className="grid h-44 w-44 shrink-0 place-items-center overflow-hidden rounded-[1.6rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(16,44,61,0.12)] sm:h-64 sm:w-64 sm:rounded-[1.9rem] sm:p-8">
-            {organization.logoUrl ? <img src={organization.logoUrl} alt={`Logo ${organizationName}`} className="h-full w-full object-contain" /> : <Building2 className="h-14 w-14 text-[#102c3d]" />}
+      <header className="relative mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(16,44,61,0.08)] sm:rounded-[2rem]">
+        <div className="relative h-56 overflow-hidden bg-[#eef3f5] sm:h-72 lg:h-80">
+          {organization.logoUrl ? <img src={organization.logoUrl} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-20 blur-xl" /> : <div className="absolute inset-0 bg-gradient-to-r from-[#e9eff1] via-white to-[#e9eff1]" />}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-white/10 to-[#102c3d]/10" />
+          <div className="relative grid h-full place-items-center p-5 sm:p-8">
+            <div className="grid h-44 w-44 place-items-center overflow-hidden rounded-[1.6rem] border border-white/80 bg-white/95 p-4 shadow-[0_16px_40px_rgba(16,44,61,0.18)] sm:h-60 sm:w-60 sm:rounded-[1.9rem] sm:p-7 lg:h-64 lg:w-64">
+              {organization.logoUrl ? <img src={organization.logoUrl} alt={`Logo ${organizationName}`} className="h-full w-full object-contain" /> : <Building2 className="h-14 w-14 text-[#102c3d]" />}
+            </div>
           </div>
-          <div className="max-w-3xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#d7b874]/45 bg-[#fdfaf4] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#8e6d31]"><Sparkles className="h-3.5 w-3.5" /> Catálogo exclusivo</div>
-            <h1 className="text-3xl font-semibold tracking-tight text-[#102c3d] sm:text-4xl lg:text-5xl">{organizationName}</h1>
-            <p className="mt-2 text-sm font-semibold uppercase tracking-[0.16em] text-[#8e6d31]">Tabela de Imóveis</p>
+        </div>
+        <div className="flex flex-col items-center gap-4 px-5 py-5 text-center sm:px-10 sm:py-6">
+          <div>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#d7b874]/45 bg-[#fdfaf4] px-3 py-1 text-[9px] font-bold uppercase tracking-[0.22em] text-[#8e6d31]"><Sparkles className="h-3 w-3" /> Catálogo exclusivo</div>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#102c3d] sm:text-3xl">{organizationName}</h1>
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#8e6d31]">Tabela de Imóveis</p>
           </div>
-          {primaryPhone && !profile && <a href={`https://wa.me/${primaryPhone}?text=${encodeURIComponent("Olá, gostaria de informações sobre os imóveis.")}`} target="_blank" rel="noreferrer" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#20bd63] px-5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#12934a]"><MessageCircle className="h-5 w-5" /> Falar no WhatsApp</a>}
+          {primaryPhone && !profile && <a href={`https://wa.me/${primaryPhone}?text=${encodeURIComponent("Olá, gostaria de informações sobre os imóveis.")}`} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#20bd63] px-5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#12934a]"><MessageCircle className="h-5 w-5" /> Falar no WhatsApp</a>}
         </div>
       </header>
 
