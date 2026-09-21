@@ -349,6 +349,15 @@ export const appRouter = router({
       await bucket.put(key, bytes, { httpMetadata: { contentType: input.contentType, cacheControl: "public, max-age=31536000, immutable" } });
       return { url: `/media/${key}` };
     }),
+    deletePhoto: protectedProcedure.input(z.object({ url: z.string().trim().min(1).max(500) })).mutation(async ({ ctx, input }) => {
+      const scope = await requireCompanyAdmin(ctx);
+      const prefix = `/media/properties/${scope.organizationId}/`;
+      if (!input.url.startsWith(prefix)) throw new TRPCError({ code: "FORBIDDEN", message: "Foto fora da tabela atual." });
+      const bucket = getPhotosBucket();
+      if (!bucket) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Armazenamento de fotos indisponível." });
+      await bucket.delete(input.url.slice("/media/".length));
+      return { success: true as const };
+    }),
     create: protectedProcedure.input(propertyPayload).mutation(async ({ ctx, input }) => {
       await ensurePropertyPrivateColumns();
       const db = await getDb();

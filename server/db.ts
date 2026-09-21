@@ -4,7 +4,7 @@ import { AuditLog, auditLogs, InsertUser, organizationMembers, organizations, us
 import { ENV } from "./_core/env";
 
 type D1DatabaseLike = Parameters<typeof drizzle>[0];
-type PhotosBucket = { put(key: string, value: Uint8Array, options?: { httpMetadata?: { contentType?: string; cacheControl?: string } }): Promise<unknown> };
+type PhotosBucket = { put(key: string, value: Uint8Array, options?: { httpMetadata?: { contentType?: string; cacheControl?: string } }): Promise<unknown>; delete(key: string): Promise<unknown> };
 let _db: ReturnType<typeof drizzle> | null = null;
 let _passwordColumnReady = false;
 let _organizationColumnsReady = false;
