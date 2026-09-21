@@ -281,7 +281,7 @@ export const appRouter = router({
   }),
 
   portal: router({
-    info: publicProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ input }) => { await ensureOrganizationColumns(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); const [organization] = await db.select().from(organizations).where(eq(organizations.slug, input.slug)).limit(1); if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." }); return { id: organization.id, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, tableType: organization.tableType, developmentName: organization.developmentName }; }),
+    info: publicProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ input }) => { await ensureOrganizationColumns(); await ensureResponsibleProfilesTable(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); const [organization] = await db.select().from(organizations).where(eq(organizations.slug, input.slug)).limit(1); if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." }); const profiles = await db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, organization.id)).orderBy(responsibleProfiles.name); return { id: organization.id, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, tableType: organization.tableType, developmentName: organization.developmentName, profiles }; }),
     publicCatalog: publicProcedure.input(z.object({ slug: z.string().trim().min(2).max(120), responsible: z.string().trim().max(180).optional() })).query(async ({ input }) => {
       await ensureOrganizationColumns(); await ensureResponsibleProfilesTable();
       const db = await getDb();
@@ -297,7 +297,7 @@ export const appRouter = router({
       return { organization: { name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, tableType: organization.tableType, developmentName: organization.developmentName }, profiles: profileRows, properties: rows.map(row => parseProperty(row, false)) };
     }),
     catalog: protectedProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ ctx, input }) => {
-      await ensureOrganizationColumns();
+      await ensureOrganizationColumns(); await ensureResponsibleProfilesTable();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const [organization] = await db.select().from(organizations).where(eq(organizations.slug, input.slug)).limit(1);
@@ -305,7 +305,8 @@ export const appRouter = router({
       const [membership] = await db.select().from(organizationMembers).where(and(eq(organizationMembers.organizationId, organization.id), eq(organizationMembers.userId, ctx.user.id))).limit(1);
       if (!membership) throw new TRPCError({ code: "FORBIDDEN", message: "Sua conta não tem acesso a esta tabela." });
       const rows = await db.select().from(properties).where(and(eq(properties.organizationId, organization.id), eq(properties.status, "available"), eq(properties.publicEnabled, 1))).orderBy(properties.title);
-      return { organization: { id: organization.id, slug: organization.slug, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, contactName: organization.contactName, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName, developmentDescription: organization.developmentDescription }, memberRole: membership.role, properties: rows.map(row => parseProperty(row, true)) };
+      const profiles = await db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, organization.id)).orderBy(responsibleProfiles.name);
+      return { organization: { id: organization.id, slug: organization.slug, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, contactName: organization.contactName, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName, developmentDescription: organization.developmentDescription }, memberRole: membership.role, profiles, properties: rows.map(row => parseProperty(row, true)) };
     }),
   }),
 
