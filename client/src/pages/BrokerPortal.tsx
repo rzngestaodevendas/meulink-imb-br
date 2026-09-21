@@ -22,7 +22,7 @@ type PortalProperty = {
   photos: string[];
   status: string;
 };
-type PortalOrganization = { name: string; publicName: string | null; logoUrl: string | null; contactName: string | null; contactPhone: string | null; tableType: string; developmentName: string | null; developmentDescription: string | null };
+type PortalOrganization = { id: number; slug: string; name: string; publicName: string | null; logoUrl: string | null; contactName: string | null; contactPhone: string | null; tableType: string; developmentName: string | null; developmentDescription: string | null };
 type PortalProfile = { name: string; phone: string | null; creci: string | null; photoUrl: string | null; bio: string | null };
 
 export default function BrokerPortal() {
@@ -58,6 +58,8 @@ export default function BrokerPortal() {
   const profileUpload = trpc.auth.uploadProfilePhoto.useMutation({ onError: error => toast.error(error.message) });
   const updateProfile = trpc.auth.updateProfile.useMutation({ onSuccess: async () => { await utils.auth.me.invalidate(); setEditingProfile(false); toast.success("Perfil atualizado"); }, onError: error => toast.error(error.message) });
   const portal = trpc.portal.catalog.useQuery({ slug }, { enabled: Boolean(slug && isAuthenticated), staleTime: 15_000 });
+  const currentInfo = info.data?.slug === slug ? info.data : undefined;
+  const currentPortal = portal.data?.organization.slug === slug ? portal.data : undefined;
   const createLink = trpc.catalog.createLink.useMutation({
     onSuccess: result => {
       const url = `${window.location.origin}/${result.profileType}/${result.brokerSlug}/imovel/${result.property.code}`;
@@ -85,12 +87,13 @@ export default function BrokerPortal() {
   }
 
   if (loading) return <div className="grid min-h-screen place-items-center bg-[#f7f8fa] text-sm text-slate-500">Validando acesso...</div>;
-  if (!isAuthenticated) return <BrokerAuthCard info={info.data} mode={authMode} setMode={setAuthMode} email={email} setEmail={setEmail} password={password} setPassword={setPassword} showPassword={showPassword} setShowPassword={setShowPassword} fullName={fullName} setFullName={setFullName} profileType={profileType} setProfileType={setProfileType} creci={creci} setCreci={setCreci} whatsapp={whatsapp} setWhatsapp={setWhatsapp} profilePhotoUrl={profilePhotoUrl} setProfilePhotoUrl={setProfilePhotoUrl} onPhotoUpload={async file => { const data = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file); }); const result = await profileUpload.mutateAsync({ fileName: file.name, contentType: file.type as "image/jpeg" | "image/png" | "image/webp", data }); setProfilePhotoUrl(result.url); }} onLogin={() => login.mutate({ email, password })} onRegister={() => { const phone = whatsapp.replace(/\D/g, ""); if (!info.data) return; register.mutate({ organizationId: info.data.id, name: fullName, email, password, profileType, whatsapp: phone, creci, profilePhotoUrl }); }} onForgot={() => forgot.mutate({ email })} busy={login.isPending || register.isPending || forgot.isPending} />;
+  if (!isAuthenticated) return <BrokerAuthCard info={currentInfo} mode={authMode} setMode={setAuthMode} email={email} setEmail={setEmail} password={password} setPassword={setPassword} showPassword={showPassword} setShowPassword={setShowPassword} fullName={fullName} setFullName={setFullName} profileType={profileType} setProfileType={setProfileType} creci={creci} setCreci={setCreci} whatsapp={whatsapp} setWhatsapp={setWhatsapp} profilePhotoUrl={profilePhotoUrl} setProfilePhotoUrl={setProfilePhotoUrl} onPhotoUpload={async file => { const data = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file); }); const result = await profileUpload.mutateAsync({ fileName: file.name, contentType: file.type as "image/jpeg" | "image/png" | "image/webp", data }); setProfilePhotoUrl(result.url); }} onLogin={() => login.mutate({ email, password })} onRegister={() => { const phone = whatsapp.replace(/\D/g, ""); if (!currentInfo) return; register.mutate({ organizationId: currentInfo.id, name: fullName, email, password, profileType, whatsapp: phone, creci, profilePhotoUrl }); }} onForgot={() => forgot.mutate({ email })} busy={login.isPending || register.isPending || forgot.isPending} />;
   if (portal.error) return <div className="grid min-h-screen place-items-center bg-[#f7f8fa] p-5"><Card className="w-full max-w-md border-0 shadow-xl"><CardContent className="p-8 text-center"><p className="font-semibold text-[#102c3d]">Não foi possível abrir esta tabela</p><p className="mt-2 text-sm text-slate-500">{portal.error.message}</p></CardContent></Card></div>;
+  if (portal.isLoading || !currentPortal) return <div className="grid min-h-screen place-items-center bg-[#f7f8fa] text-sm text-slate-500">Carregando tabela...</div>;
 
-  const organization = portal.data?.organization as PortalOrganization | undefined;
-  const properties = (portal.data?.properties || []) as PortalProperty[];
-  const profiles = (portal.data?.profiles || []) as PortalProfile[];
+  const organization = currentPortal.organization as PortalOrganization;
+  const properties = (currentPortal.properties || []) as PortalProperty[];
+  const profiles = (currentPortal.profiles || []) as PortalProfile[];
   const filtered = properties.filter(property => `${property.title} ${property.address || ""} ${property.price || ""} ${property.responsibleName || ""}`.toLowerCase().includes(search.toLowerCase()));
   const groupedByResponsible = Array.from(filtered.reduce((groups, property) => { const key = property.responsibleName?.trim() || "Imóveis sem responsável definido"; const list = groups.get(key) || []; list.push(property); groups.set(key, list); return groups; }, new Map<string, PortalProperty[]>()).entries());
 

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 type Property = { id: number; code: string; title: string; address: string | null; price: string | null; photos: string[]; details: string[]; responsibleName?: string | null; responsiblePhone?: string | null };
 type Profile = { name: string; phone: string | null; email: string | null; creci: string | null; photoUrl: string | null; bio: string | null };
-type Organization = { name: string; publicName: string | null; logoUrl: string | null };
+type Organization = { slug: string; name: string; publicName: string | null; logoUrl: string | null };
 
 const profileSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const initials = (name: string) => name.split(" ").map(part => part[0]).slice(0, 2).join("").toUpperCase();
@@ -19,11 +19,12 @@ export default function PublicCatalog() {
   const slug = params?.slug || allParams?.slug || "";
   const responsible = params?.responsible && params.responsible !== "compartilhar" && params.responsible !== "todos" ? params.responsible : (search.get("responsavel") || undefined);
   const catalog = trpc.portal.publicCatalog.useQuery({ slug, responsible }, { enabled: Boolean(slug) });
+  const currentCatalog = catalog.data?.organization.slug === slug ? catalog.data : undefined;
 
-  if (catalog.isLoading) return <div className="grid min-h-screen place-items-center bg-[#f5f7f8] text-sm text-slate-500">Preparando sua apresentação...</div>;
-  if (catalog.error || !catalog.data) return <div className="grid min-h-screen place-items-center bg-[#f5f7f8] p-5 text-sm text-red-700">Esta apresentação não está disponível.</div>;
+  if (catalog.error) return <div className="grid min-h-screen place-items-center bg-[#f5f7f8] p-5 text-sm text-red-700">Esta apresentação não está disponível.</div>;
+  if (catalog.isLoading || !currentCatalog) return <div className="grid min-h-screen place-items-center bg-[#f5f7f8] text-sm text-slate-500">Preparando sua apresentação...</div>;
 
-  const { organization, profiles, properties } = catalog.data as { organization: Organization; profiles: Profile[]; properties: Property[] };
+  const { organization, profiles, properties } = currentCatalog as { organization: Organization; profiles: Profile[]; properties: Property[] };
   const profile = responsible ? profiles.find(item => profileSlug(item.name) === responsible || item.name === responsible) : undefined;
   const visibleProfiles = profile ? [profile] : profiles;
   const primaryPhone = (profile?.phone || properties[0]?.responsiblePhone || "").replace(/\D/g, "");
