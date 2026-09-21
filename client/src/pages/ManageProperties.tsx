@@ -49,7 +49,6 @@ function fileToBase64(file: File): Promise<string> {
 function PhotoGalleryEditor({ photos, onChange, uploadImage, uploading }: { photos: string[]; onChange: (photos: string[]) => void; uploadImage: (input: { fileName: string; contentType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" | "image/avif"; base64: string }) => Promise<{ url: string }>; uploading: boolean }) {
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [photoUrl, setPhotoUrl] = useState("");
 
   function finishDrag() {
     if (draggingIndex !== null && dragOverIndex !== null && draggingIndex !== dragOverIndex) {
@@ -81,19 +80,9 @@ function PhotoGalleryEditor({ photos, onChange, uploadImage, uploading }: { phot
     } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível enviar as fotos."); }
   }
 
-  function addUrl() {
-    const value = photoUrl.trim();
-    if (!value) return;
-    try { if (!value.startsWith("/manus-storage/")) new URL(value); } catch { toast.error("Informe uma URL válida para a foto."); return; }
-    if (photos.length >= MAX_PHOTOS) { toast.error(`Cada imóvel pode ter no máximo ${MAX_PHOTOS} fotos.`); return; }
-    onChange([...photos, value]);
-    setPhotoUrl("");
-  }
-
   return <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 p-3 sm:p-4 lg:col-span-2">
     <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-[#102c3d]">Galeria do imóvel</p><p className="text-xs font-normal text-slate-500">Selecione várias fotos, toque/clique em uma para definir a capa e arraste para organizar a ordem.</p></div><Badge variant="secondary">{photos.length}/{MAX_PHOTOS}</Badge></div>
     <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-[#d7b874]/70 bg-white px-4 py-3 text-center text-sm font-medium text-[#102c3d] transition hover:border-[#20bd63] hover:bg-emerald-50"><ImagePlus className="h-6 w-6 text-[#20bd63]" /><span>{uploading ? "Enviando fotos..." : "Escolher fotos do dispositivo"}</span><span className="text-xs font-normal text-slate-500">JPG, PNG, WEBP, GIF ou AVIF · até 8 MB por foto · seleção múltipla</span><input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple disabled={uploading || photos.length >= MAX_PHOTOS} onChange={handleFiles} className="sr-only" /></label>
-    <div className="mt-3 flex flex-col gap-2 sm:flex-row"><Input value={photoUrl} onChange={event => setPhotoUrl(event.target.value)} placeholder="Ou cole uma URL de imagem existente" onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); addUrl(); } }} /><Button type="button" variant="outline" onClick={addUrl} className="gap-2 sm:w-auto"><Plus className="h-4 w-4" /> Adicionar URL</Button></div>
     {photos.length > 0 && <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{photos.map((photo, index) => <div key={`${photo}-${index}`} data-photo-index={index} onPointerDown={event => { if ((event.target as HTMLElement).closest("button")) return; event.currentTarget.setPointerCapture(event.pointerId); setDraggingIndex(index); setDragOverIndex(index); }} onPointerMove={event => { if (draggingIndex === null) return; const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-photo-index]"); if (target?.dataset.photoIndex) setDragOverIndex(Number(target.dataset.photoIndex)); }} onPointerUp={finishDrag} onPointerCancel={finishDrag} className={`relative overflow-hidden rounded-lg border-2 bg-white transition ${dragOverIndex === index ? "border-[#20bd63] ring-2 ring-[#20bd63]/30" : "border-transparent"} ${draggingIndex === index ? "opacity-60" : ""}`} style={{ touchAction: "none" }}><img src={photo} alt={`Foto ${index + 1} do imóvel`} className="aspect-square w-full object-cover" /><div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-[#102c3d]/85 p-1.5 text-white"><span className="flex items-center gap-1 text-[11px]"><GripVertical className="h-3.5 w-3.5" /> {index === 0 ? "Capa" : `Foto ${index + 1}`}</span><div className="flex gap-1"><Button type="button" variant="ghost" size="icon" title={index === 0 ? "Foto de capa" : "Definir como capa"} aria-label={index === 0 ? "Foto de capa" : "Definir como capa"} onClick={() => { if (index === 0) return; onChange([photo, ...photos.filter((_, photoIndex) => photoIndex !== index)]); }} className="h-7 w-7 text-white hover:bg-white/20">{index === 0 ? <Star className="h-3.5 w-3.5 fill-[#d7b874] text-[#d7b874]" /> : <Star className="h-3.5 w-3.5" />}</Button><Button type="button" variant="ghost" size="icon" title="Remover foto" aria-label={`Remover foto ${index + 1}`} onClick={() => onChange(photos.filter((_, photoIndex) => photoIndex !== index))} className="h-7 w-7 text-white hover:bg-red-500/70"><Trash2 className="h-3.5 w-3.5" /></Button></div></div></div>)}</div>}
     {photos.length === 0 && <p className="mt-4 text-center text-xs text-slate-500">Nenhuma foto adicionada. A primeira foto da ordem será usada como capa.</p>}
   </div>;
