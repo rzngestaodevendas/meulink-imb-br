@@ -5,6 +5,7 @@ import { organizationInvites, organizationMembers, organizations, properties, sh
 import { getAuditLogs, getDb, getOrganizationForUser, writeAuditLog } from "./db";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
+import { storagePut } from "./storage";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { and, eq, isNull, like, or } from "drizzle-orm";
@@ -24,6 +25,11 @@ export const propertyPayload = z.object({
   publicEnabled: z.boolean(),
 });
 export const bulkPropertyInput = z.object({ rows: propertyPayload.array().min(1).max(200) });
+const imageUploadInput = z.object({
+  fileName: z.string().trim().min(1).max(180),
+  contentType: z.enum(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]),
+  base64: z.string().min(1).max(12_000_000),
+});
 export const teamRoleSchema = z.enum(["company_admin", "broker"]);
 export const inviteInput = z.object({ email: z.string().trim().email().max(320), role: teamRoleSchema });
 export const auditActionSchema = z.enum(["organization.created", "organization.selected", "property.created", "property.bulk_created", "property.updated", "property.archived", "share_link.created", "team.invite_created", "team.invite_revoked", "team.invite_accepted", "team.role_updated", "team.member_removed"]);
@@ -153,6 +159,20 @@ export const appRouter = router({
       if (!membership) throw new TRPCError({ code: "FORBIDDEN", message: "Sua conta não tem acesso a esta tabela." });
       const rows = await db.select().from(properties).where(and(eq(properties.organizationId, organization.id), eq(properties.status, "available"), eq(properties.publicEnabled, 1))).orderBy(properties.title);
       return { organization: { id: organization.id, slug: organization.slug, name: organization.name, publicName: organization.publicName }, memberRole: membership.role, properties: rows.map(row => parseProperty(row, true)) };
+    }),
+  }),
+
+  media: router({
+    uploadImage: protectedProcedure.input(imageUploadInput).mutation(async ({ ctx, input }) => {
+      const scope = await requireCompanyAdmin(ctx);
+      const base64 = input.base64.replace(/^data:[^;]+;base64,/, "");
+      const buffer = Buffer.from(base64, "base64");
+      if (!buffer.length || buffer.length > 8 * 1024 * 1024) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "A imagem deve ter entre 1 byte e 8 MB." });
+      }
+      const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-|-$/g, "") || "imagem";
+      const uploaded = await storagePut(`organizations/${scope.organizationId}/properties/${safeName}`, buffer, input.contentType);
+      return { url: uploaded.url };
     }),
   }),
 
