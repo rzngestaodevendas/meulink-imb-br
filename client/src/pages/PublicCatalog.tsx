@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 type Property = { id: number; code: string; title: string; address: string | null; price: string | null; photos: string[]; details: string[]; responsibleName?: string | null; responsiblePhone?: string | null };
 type Profile = { name: string; phone: string | null; email: string | null; creci: string | null; photoUrl: string | null; bio: string | null };
-type Organization = { slug: string; name: string; publicName: string | null; logoUrl: string | null };
+type Organization = { slug: string; name: string; publicName: string | null; logoUrl: string | null; contactPhone?: string | null };
 
 const profileSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const initials = (name: string) => name.split(" ").map(part => part[0]).slice(0, 2).join("").toUpperCase();
@@ -27,7 +27,7 @@ export default function PublicCatalog() {
   const { organization, profiles, properties } = currentCatalog as { organization: Organization; profiles: Profile[]; properties: Property[] };
   const profile = responsible ? profiles.find(item => profileSlug(item.name) === responsible || item.name === responsible) : undefined;
   const visibleProfiles = profile ? [profile] : profiles;
-  const primaryPhone = (profile?.phone || properties[0]?.responsiblePhone || "").replace(/\D/g, "");
+  const primaryPhone = (profile?.phone || properties[0]?.responsiblePhone || organization.contactPhone || "").replace(/\D/g, "");
   const organizationName = organization.publicName || organization.name;
   const publicBase = `${window.location.origin}/tabela/${slug}`;
   const unsignedPropertyUrl = (code: string) => `${window.location.origin}/imovel/${code}`;

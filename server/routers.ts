@@ -327,7 +327,7 @@ export const appRouter = router({
       const conditions = [eq(properties.organizationId, organization.id), eq(properties.status, "available"), eq(properties.publicEnabled, 1)];
       if (selectedProfile) conditions.push(eq(properties.responsibleName, selectedProfile.name));
       const rows = await db.select().from(properties).where(and(...conditions)).orderBy(properties.title);
-      return { organization: { name: organization.name, publicName: organization.publicName, slug: organization.slug, logoUrl: organization.logoUrl, tableType: organization.tableType, developmentName: organization.developmentName }, profiles: profileRows, properties: rows.map(row => parseProperty(row, false)) };
+      return { organization: { name: organization.name, publicName: organization.publicName, slug: organization.slug, logoUrl: organization.logoUrl, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName }, profiles: profileRows, properties: rows.map(row => parseProperty(row, false)) };
     }),
     catalog: protectedProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ ctx, input }) => {
       await ensureOrganizationColumns(); await ensureResponsibleProfilesTable(); await ensurePropertyPrivateColumns();
