@@ -42,12 +42,13 @@ export default function PublicCatalog() {
         <div className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-[#20bd63]/10 blur-3xl" />
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <div className="grid h-20 w-20 shrink-0 sm:h-36 sm:w-36 place-items-center overflow-hidden rounded-[1.6rem] border border-white/60 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.2)] sm:rounded-[1.9rem] sm:p-4">
+            <div className="grid h-32 w-32 shrink-0 place-items-center overflow-hidden rounded-[1.6rem] border border-white/60 bg-white p-4 shadow-[0_14px_35px_rgba(0,0,0,0.2)] sm:h-56 sm:w-56 sm:rounded-[1.9rem] sm:p-7">
               {organization.logoUrl ? <img src={organization.logoUrl} alt={`Logo ${organizationName}`} className="h-full w-full object-contain" /> : <Building2 className="h-12 w-12 text-[#102c3d]" />}
             </div>
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#d7b874]/35 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#f0d99e]"><Sparkles className="h-3.5 w-3.5" /> Catálogo exclusivo</div>
               <h1 className="max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">{organizationName}</h1>
+              <p className="mt-2 text-sm font-semibold uppercase tracking-[0.16em] text-[#f0d99e]">Tabela de Imóveis</p>
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/70 sm:text-base">Encontre seu próximo imóvel com atendimento especializado, informações confiáveis e uma seleção feita para você.</p>
               {profile && <p className="mt-4 text-sm font-semibold text-[#d7b874]">Exclusividades de {profile.name}</p>}
             </div>
