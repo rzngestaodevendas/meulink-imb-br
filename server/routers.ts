@@ -272,6 +272,28 @@ export const appRouter = router({
       return { token, property: parseProperty(property), profileType: ctx.user.profileType === "corretora" ? "corretora" : "corretor", brokerSlug: input.brokerName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100) };
     }),
 
+    publicByCode: publicProcedure.input(z.object({ code: z.string().regex(/^ML-\d+$/i) })).query(async ({ input }) => {
+      await ensurePropertyPrivateColumns(); await ensureOrganizationColumns();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const propertyId = Number(input.code.replace(/\D/g, ""));
+      const [row] = await db.select({ property: properties, organization: organizations }).from(properties).innerJoin(organizations, eq(properties.organizationId, organizations.id)).where(and(eq(properties.id, propertyId), eq(properties.publicEnabled, 1), eq(properties.status, "available"))).limit(1);
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Imóvel não encontrado ou indisponível." });
+      return { property: parseProperty(row.property, false), broker: null, organization: { name: row.organization.publicName || row.organization.name, logoUrl: row.organization.logoUrl, contactName: row.organization.contactName, contactPhone: row.organization.contactPhone, tableType: row.organization.tableType, developmentName: row.organization.developmentName } };
+    }),
+
+    publicFriendlyLink: publicProcedure.input(z.object({ code: z.string().regex(/^ML-\d+$/i), brokerSlug: z.string().trim().min(2).max(120) })).query(async ({ input }) => {
+      await ensurePropertyPrivateColumns(); await ensureShareLinkColumns(); await ensureOrganizationColumns();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const propertyId = Number(input.code.replace(/\D/g, ""));
+      const rows = await db.select({ link: shareLinks, property: properties, organization: organizations }).from(shareLinks).innerJoin(properties, eq(shareLinks.propertyId, properties.id)).innerJoin(organizations, eq(shareLinks.organizationId, organizations.id)).where(and(eq(properties.id, propertyId), eq(shareLinks.enabled, 1), eq(properties.publicEnabled, 1), eq(properties.status, "available"))).orderBy(shareLinks.createdAt);
+      const slugify = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const row = rows.reverse().find(item => slugify(item.link.brokerName) === input.brokerSlug);
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Assinatura do corretor não encontrada ou expirada." });
+      return { property: parseProperty(row.property, false), broker: { name: row.link.brokerName, phone: row.link.brokerPhone, photoUrl: row.link.brokerPhotoUrl }, organization: { name: row.organization.publicName || row.organization.name, logoUrl: row.organization.logoUrl, contactName: row.organization.contactName, contactPhone: row.organization.contactPhone, tableType: row.organization.tableType, developmentName: row.organization.developmentName } };
+    }),
+
     publicLink: publicProcedure.input(z.object({ token: z.string().trim().min(8).max(80) })).query(async ({ input }) => {
       await ensurePropertyPrivateColumns(); await ensureShareLinkColumns();
       await ensureOrganizationColumns();
