@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 type PortalProperty = {
   id: number;
+  slug?: string;
   title: string;
   address: string | null;
   responsibleName?: string | null;
@@ -34,7 +35,10 @@ export default function BrokerPortal() {
   const portal = trpc.portal.catalog.useQuery({ slug }, { enabled: Boolean(slug && isAuthenticated), staleTime: 15_000 });
   const createLink = trpc.catalog.createLink.useMutation({
     onSuccess: result => {
-      const url = `${window.location.origin}/?link=${result.token}`;
+      const normalize = (value: string) => value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const crm = (result.property as PortalProperty).crm || {};
+      const code = crm.code || result.property.slug || `ML-${String(result.property.id).padStart(6, "0")}`;
+      const url = `${window.location.origin}/corretor/${normalize(brokerName)}/imovel/${normalize(code)}`;
       setLinks(current => ({ ...current, [result.property.id]: url }));
       toast.success("Landing criada com os seus dados");
     },

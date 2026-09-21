@@ -2,15 +2,20 @@ import { trpc } from "@/lib/trpc";
 import { MapView } from "@/components/Map";
 import { ArrowLeft, ChevronLeft, ChevronRight, MapPin, MessageCircle, ShieldCheck, X } from "lucide-react";
 import { useState } from "react";
+import { useRoute } from "wouter";
 
 type PublicCrm = { code?: string; propertyType?: string; purpose?: string; bedrooms?: string; suites?: string; bathrooms?: string; parkingSpaces?: string; privateArea?: string; totalArea?: string; floor?: string; yearBuilt?: string; furnished?: boolean; financing?: boolean; tradeIn?: boolean; condoFee?: string; propertyTax?: string; quadraLote?: string; developmentName?: string; developmentType?: string; developmentDescription?: string; developmentPhotos?: string[]; latitude?: string; longitude?: string; mapUrl?: string; visibility?: Record<string, boolean> };
 
 export default function PublicProperty() {
   const token = new URLSearchParams(window.location.search).get("link") || "";
-  const propertyQuery = trpc.catalog.publicLink.useQuery({ token }, { enabled: token.length > 0, retry: false });
+  const [, friendlyParams] = useRoute("/corretor/:brokerSlug/imovel/:code");
+  const friendly = Boolean(friendlyParams?.brokerSlug && friendlyParams?.code);
+  const legacyQuery = trpc.catalog.publicLink.useQuery({ token }, { enabled: !friendly && token.length > 0, retry: false });
+  const friendlyQuery = trpc.catalog.publicFriendly.useQuery({ brokerSlug: friendlyParams?.brokerSlug || "", code: friendlyParams?.code || "" }, { enabled: friendly, retry: false });
+  const propertyQuery = friendly ? friendlyQuery : legacyQuery;
   const [photoIndex, setPhotoIndex] = useState(0);
   const [lightbox, setLightbox] = useState(false);
-  if (!token) return <EmptyState title="Link de imóvel inválido ou expirado" text="Solicite ao seu consultor um novo link de acesso." />;
+  if (!token && !friendly) return <EmptyState title="Link de imóvel inválido ou expirado" text="Solicite ao seu consultor um novo link de acesso." />;
   if (propertyQuery.isLoading) return <div className="grid min-h-screen place-items-center bg-[#fbfaf8] text-sm text-slate-500">Carregando imóvel...</div>;
   if (propertyQuery.error || !propertyQuery.data) return <EmptyState title="Link de imóvel inválido ou expirado" text="Solicite ao seu consultor um novo link de acesso." />;
   const { property, broker } = propertyQuery.data;

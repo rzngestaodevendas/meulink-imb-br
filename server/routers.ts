@@ -165,6 +165,28 @@ export const appRouter = router({
       if (!link) throw new TRPCError({ code: "NOT_FOUND", message: "Link de imóvel inválido ou expirado" });
       return { property: parseProperty(link.property, false), broker: { name: link.link.brokerName, phone: link.link.brokerPhone } };
     }),
+    publicFriendly: publicProcedure.input(z.object({ brokerSlug: z.string().trim().min(2).max(180), code: z.string().trim().min(2).max(180) })).query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const rows = await db.select({ link: shareLinks, property: properties }).from(shareLinks).innerJoin(properties, eq(shareLinks.propertyId, properties.id)).where(and(eq(shareLinks.enabled, 1), eq(properties.publicEnabled, 1), eq(properties.status, "available")));
+      const normalize = (value: string) => value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const match = rows.find(row => {
+        let crm: Record<string, any> = {}; try { crm = JSON.parse(row.property.crmData || "{}"); } catch { /* legacy row */ }
+        const propertyCode = crm.code || row.property.slug || `ML-${String(row.property.id).padStart(6, "0")}`;
+        return normalize(row.link.brokerName) === input.brokerSlug && normalize(String(propertyCode)) === normalize(input.code);
+      });
+      if (!match) throw new TRPCError({ code: "NOT_FOUND", message: "Landing do imóvel não encontrada ou indisponível." });
+      return { property: parseProperty(match.property, false), broker: { name: match.link.brokerName, phone: match.link.brokerPhone } };
+    }),
+    publicOrganization: publicProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const [organization] = await db.select().from(organizations).where(eq(organizations.slug, input.slug)).limit(1);
+      if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Imobiliária não encontrada." });
+      const rows = await db.select().from(properties).where(and(eq(properties.organizationId, organization.id), eq(properties.status, "available"), eq(properties.publicEnabled, 1))).orderBy(properties.title);
+      const members = await db.select({ name: users.name, profilePhoto: users.profilePhoto, role: organizationMembers.role }).from(organizationMembers).innerJoin(users, eq(organizationMembers.userId, users.id)).where(eq(organizationMembers.organizationId, organization.id));
+      return { organization: { slug: organization.slug, name: organization.name, publicName: organization.publicName }, members, properties: rows.map(row => parseProperty(row, false)) };
+    }),
   }),
 
   portal: router({

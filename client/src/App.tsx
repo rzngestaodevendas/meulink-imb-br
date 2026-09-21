@@ -6,7 +6,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import DashboardLayout from "./components/DashboardLayout";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
-import PublicProperty from "./pages/PublicProperty";
+import PublicProperty from "@/pages/PublicProperty";
+import PublicOrganization from "@/pages/PublicOrganization";
 import ManageProperties from "./pages/ManageProperties";
 import Team from "./pages/Team";
 import AuditLog from "./pages/AuditLog";
@@ -37,6 +38,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={PublicProperty} />
+      <Route path="/corretor/:brokerSlug/imovel/:code" component={PublicProperty} />
+      <Route path="/imobiliaria/:slug" component={PublicOrganization} />
       <Route path="/tabela/:slug" component={BrokerPortal} />
       <Route path="/app" component={ProtectedApp} />
       <Route path="/app/imoveis" component={ProtectedProperties} />
