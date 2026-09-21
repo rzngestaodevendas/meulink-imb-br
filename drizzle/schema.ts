@@ -94,6 +94,7 @@ export const properties = sqliteTable("properties", {
   responsiblePhone: text("responsiblePhone"),
   details: text("details").notNull(),
   price: text("price"),
+  commission: text("commission"),
   notes: text("notes"),
   photos: text("photos").notNull(),
   sourceDriveUrl: text("sourceDriveUrl"),

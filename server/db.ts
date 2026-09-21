@@ -11,6 +11,7 @@ let _organizationColumnsReady = false;
 let _brokerProfileColumnsReady = false;
 let _shareLinkColumnsReady = false;
 let _responsibleProfilesReady = false;
+let _propertyPrivateColumnsReady = false;
 
 function getD1Binding(): D1DatabaseLike | undefined {
   return (globalThis as typeof globalThis & { __MEULINK_D1?: D1DatabaseLike }).__MEULINK_D1;
@@ -94,6 +95,15 @@ export async function ensureResponsibleProfilesTable() {
   if (!binding) throw new Error("Database is not available");
   await binding.prepare("CREATE TABLE IF NOT EXISTS responsibleProfiles (id INTEGER PRIMARY KEY AUTOINCREMENT, organizationId INTEGER NOT NULL, name TEXT NOT NULL, phone TEXT, email TEXT, creci TEXT, photoUrl TEXT, bio TEXT, createdAt INTEGER, updatedAt INTEGER)").run();
   _responsibleProfilesReady = true;
+}
+
+export async function ensurePropertyPrivateColumns() {
+  if (_propertyPrivateColumnsReady) return;
+  const binding = getD1Binding();
+  if (!binding) throw new Error("Database is not available");
+  try { await binding.prepare("ALTER TABLE properties ADD COLUMN commission TEXT").run(); }
+  catch (error) { if (!String(error).toLowerCase().includes("duplicate column")) throw error; }
+  _propertyPrivateColumnsReady = true;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {

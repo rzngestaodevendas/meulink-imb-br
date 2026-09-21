@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { auditLogs, organizationInvites, organizationMembers, organizations, properties, responsibleProfiles, shareLinks, users } from "../drizzle/schema";
-import { ensureBrokerProfileColumns, ensureOrganizationColumns, ensurePasswordColumn, ensureResponsibleProfilesTable, ensureShareLinkColumns, getAuditLogs, getDb, getOrganizationForUser, getPhotosBucket, getUserByEmail, writeAuditLog } from "./db";
+import { ensureBrokerProfileColumns, ensureOrganizationColumns, ensurePasswordColumn, ensurePropertyPrivateColumns, ensureResponsibleProfilesTable, ensureShareLinkColumns, getAuditLogs, getDb, getOrganizationForUser, getPhotosBucket, getUserByEmail, writeAuditLog } from "./db";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
 import { COOKIE_NAME } from "@shared/const";
@@ -21,6 +21,7 @@ export const propertyPayload = z.object({
   responsiblePhone: z.string().trim().max(32).optional().default(""),
   details: z.array(z.string().trim().min(1).max(240)).max(30),
   price: z.string().trim().max(80).optional().default(""),
+  commission: z.string().trim().max(120).optional().default(""),
   notes: z.string().trim().max(5000).optional().default(""),
   photos: z.array(z.string().trim().url().or(z.string().trim().startsWith("/manus-storage/")).or(z.string().trim().startsWith("/media/"))).max(60),
   status: statusSchema,
@@ -41,6 +42,7 @@ function parseProperty(row: typeof properties.$inferSelect, includeInternal = tr
     ...(includeInternal ? { responsibleName: row.responsibleName, responsiblePhone: row.responsiblePhone } : {}),
     details: JSON.parse(row.details || "[]") as string[],
     price: row.price,
+    ...(includeInternal ? { commission: row.commission } : {}),
     notes: row.notes,
     photos: JSON.parse(row.photos || "[]") as string[],
     ...(includeInternal ? { sourceDriveUrl: row.sourceDriveUrl } : {}),
@@ -243,6 +245,7 @@ export const appRouter = router({
 
   catalog: router({
     list: protectedProcedure.input(propertyInput.optional()).query(async ({ ctx, input }) => {
+      await ensurePropertyPrivateColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const scope = await requireCompanyAdmin(ctx);
@@ -270,7 +273,7 @@ export const appRouter = router({
     }),
 
     publicLink: publicProcedure.input(z.object({ token: z.string().trim().min(8).max(80) })).query(async ({ input }) => {
-      await ensureShareLinkColumns();
+      await ensurePropertyPrivateColumns(); await ensureShareLinkColumns();
       await ensureOrganizationColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
@@ -283,7 +286,7 @@ export const appRouter = router({
   portal: router({
     info: publicProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ input }) => { await ensureOrganizationColumns(); await ensureResponsibleProfilesTable(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); const [organization] = await db.select().from(organizations).where(eq(organizations.slug, input.slug)).limit(1); if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." }); const profiles = await db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, organization.id)).orderBy(responsibleProfiles.name); return { id: organization.id, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, tableType: organization.tableType, developmentName: organization.developmentName, profiles }; }),
     publicCatalog: publicProcedure.input(z.object({ slug: z.string().trim().min(2).max(120), responsible: z.string().trim().max(180).optional() })).query(async ({ input }) => {
-      await ensureOrganizationColumns(); await ensureResponsibleProfilesTable();
+      await ensureOrganizationColumns(); await ensureResponsibleProfilesTable(); await ensurePropertyPrivateColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const [organization] = await db.select().from(organizations).where(eq(organizations.slug, input.slug)).limit(1);
@@ -297,7 +300,7 @@ export const appRouter = router({
       return { organization: { name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, tableType: organization.tableType, developmentName: organization.developmentName }, profiles: profileRows, properties: rows.map(row => parseProperty(row, false)) };
     }),
     catalog: protectedProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ ctx, input }) => {
-      await ensureOrganizationColumns(); await ensureResponsibleProfilesTable();
+      await ensureOrganizationColumns(); await ensureResponsibleProfilesTable(); await ensurePropertyPrivateColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const [organization] = await db.select().from(organizations).where(eq(organizations.slug, input.slug)).limit(1);
@@ -325,12 +328,13 @@ export const appRouter = router({
       return { url: `/media/${key}` };
     }),
     create: protectedProcedure.input(propertyPayload).mutation(async ({ ctx, input }) => {
+      await ensurePropertyPrivateColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const scope = await requireCompanyAdmin(ctx);
       const baseSlug = input.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 150) || `imovel-${nanoid(8)}`;
       const slug = `${baseSlug}-${nanoid(5).toLowerCase()}`;
-      await db.insert(properties).values({ organizationId: scope.organizationId, slug, title: input.title, address: input.address, responsibleName: input.responsibleName, responsiblePhone: input.responsiblePhone, details: JSON.stringify(input.details), price: input.price, notes: input.notes, photos: JSON.stringify(input.photos), status: input.status, publicEnabled: input.publicEnabled ? 1 : 0 });
+      await db.insert(properties).values({ organizationId: scope.organizationId, slug, title: input.title, address: input.address, responsibleName: input.responsibleName, responsiblePhone: input.responsiblePhone, details: JSON.stringify(input.details), price: input.price, commission: input.commission, notes: input.notes, photos: JSON.stringify(input.photos), status: input.status, publicEnabled: input.publicEnabled ? 1 : 0 });
       const [created] = await db.select().from(properties).where(and(eq(properties.organizationId, scope.organizationId), eq(properties.slug, slug))).limit(1);
       if (!created) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível carregar o imóvel criado." });
       await recordAudit(ctx, scope.organizationId, "property.created", "property", created.id, { title: created.title });
@@ -338,12 +342,13 @@ export const appRouter = router({
     }),
 
     bulkCreate: protectedProcedure.input(bulkPropertyInput).mutation(async ({ ctx, input }) => {
+      await ensurePropertyPrivateColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const scope = await requireCompanyAdmin(ctx);
       const values = input.rows.map(row => {
         const baseSlug = row.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 150) || `imovel-${nanoid(8)}`;
-        return { organizationId: scope.organizationId, slug: `${baseSlug}-${nanoid(5).toLowerCase()}`, title: row.title, address: row.address, responsibleName: row.responsibleName, responsiblePhone: row.responsiblePhone, details: JSON.stringify(row.details), price: row.price, notes: row.notes, photos: JSON.stringify(row.photos), status: row.status, publicEnabled: row.publicEnabled ? 1 : 0 };
+        return { organizationId: scope.organizationId, slug: `${baseSlug}-${nanoid(5).toLowerCase()}`, title: row.title, address: row.address, responsibleName: row.responsibleName, responsiblePhone: row.responsiblePhone, details: JSON.stringify(row.details), price: row.price, commission: row.commission, notes: row.notes, photos: JSON.stringify(row.photos), status: row.status, publicEnabled: row.publicEnabled ? 1 : 0 };
       });
       await db.insert(properties).values(values);
       await recordAudit(ctx, scope.organizationId, "property.bulk_created", "property", undefined, { count: values.length });
@@ -351,12 +356,13 @@ export const appRouter = router({
     }),
 
     update: protectedProcedure.input(z.object({ id: z.number().int().positive(), data: propertyPayload })).mutation(async ({ ctx, input }) => {
+      await ensurePropertyPrivateColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const scope = await requireCompanyAdmin(ctx);
       const [existing] = await db.select().from(properties).where(and(eq(properties.id, input.id), eq(properties.organizationId, scope.organizationId))).limit(1);
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Imóvel não encontrado." });
-      await db.update(properties).set({ title: input.data.title, address: input.data.address, responsibleName: input.data.responsibleName, responsiblePhone: input.data.responsiblePhone, details: JSON.stringify(input.data.details), price: input.data.price, notes: input.data.notes, photos: JSON.stringify(input.data.photos), status: input.data.status, publicEnabled: input.data.publicEnabled ? 1 : 0 }).where(eq(properties.id, input.id));
+      await db.update(properties).set({ title: input.data.title, address: input.data.address, responsibleName: input.data.responsibleName, responsiblePhone: input.data.responsiblePhone, details: JSON.stringify(input.data.details), price: input.data.price, commission: input.data.commission, notes: input.data.notes, photos: JSON.stringify(input.data.photos), status: input.data.status, publicEnabled: input.data.publicEnabled ? 1 : 0 }).where(eq(properties.id, input.id));
       const [updated] = await db.select().from(properties).where(eq(properties.id, input.id)).limit(1);
       await recordAudit(ctx, scope.organizationId, "property.updated", "property", input.id, { title: input.data.title, status: input.data.status });
       return parseProperty(updated!);
