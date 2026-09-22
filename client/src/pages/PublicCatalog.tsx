@@ -47,7 +47,7 @@ export default function PublicCatalog() {
       <header className={`relative mb-8 overflow-hidden rounded-2xl border shadow-[0_18px_50px_rgba(16,44,61,0.08)] sm:rounded-[2rem] ${isMasterplan ? "border-black bg-black" : "border-slate-200 bg-white"}`}>
         <div className={`relative flex min-h-56 items-center justify-center overflow-hidden px-3 py-5 sm:min-h-72 sm:px-8 sm:py-8 lg:min-h-80 ${isMasterplan ? "bg-black" : "bg-white"}`}>
           <div className="relative flex h-full w-full items-center justify-center">
-            {organization.logoUrl ? <img src={organization.logoUrl} alt={`Logo ${organizationName}`} className="max-h-56 w-full max-w-5xl object-contain sm:max-h-72 lg:max-h-80" /> : <Building2 className="h-16 w-16 text-slate-400" />}
+            {organization.logoUrl ? <img src={organization.logoUrl} alt={`Logo ${organizationName}`} className="max-h-40 w-full max-w-4xl object-contain sm:max-h-52 lg:max-h-60" /> : <Building2 className="h-16 w-16 text-slate-400" />}
           </div>
         </div>
       </header>
