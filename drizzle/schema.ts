@@ -28,6 +28,7 @@ export const organizations = sqliteTable("organizations", {
   entityType: text("entityType", { enum: ["construtora", "imobiliaria", "corretor", "investidor"] }).notNull().default("construtora"),
   name: text("name").notNull(),
   publicName: text("publicName"),
+  catalogPeriod: text("catalogPeriod").notNull().default("Setembro de 2026"),
   logoUrl: text("logoUrl"),
   contactName: text("contactName"),
   contactPhone: text("contactPhone"),

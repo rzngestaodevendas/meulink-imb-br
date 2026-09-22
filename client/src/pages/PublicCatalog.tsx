@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 type Property = { id: number; code: string; title: string; address: string | null; price: string | null; photos: string[]; details: string[]; responsibleName?: string | null; responsiblePhone?: string | null };
 type Profile = { name: string; phone: string | null; email: string | null; creci: string | null; photoUrl: string | null; bio: string | null };
-type Organization = { slug: string; name: string; publicName: string | null; logoUrl: string | null; contactPhone?: string | null };
+type Organization = { slug: string; name: string; publicName: string | null; catalogPeriod: string | null; logoUrl: string | null; contactPhone?: string | null };
 
 const profileSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const initials = (name: string) => name.split(" ").map(part => part[0]).slice(0, 2).join("").toUpperCase();
@@ -32,7 +32,7 @@ export default function PublicCatalog() {
   const visibleProfiles = profile ? [profile] : profiles;
   const primaryPhone = (profile?.phone || properties[0]?.responsiblePhone || organization.contactPhone || "").replace(/\D/g, "");
   const organizationName = organization.publicName || organization.name;
-  const displayTitle = slug === "masterplan-business" ? "Masterplan" : organizationName;
+  const catalogPeriod = organization.catalogPeriod || "Setembro de 2026";
   const publicBase = `${window.location.origin}/tabela/${slug}`;
   const unsignedPropertyUrl = (code: string) => `${window.location.origin}/imovel/${code}`;
   const signedPortalUrl = (id: number) => `${publicBase}?compartilhar=${id}`;
@@ -43,12 +43,12 @@ export default function PublicCatalog() {
       <header className="relative mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(16,44,61,0.08)] sm:rounded-[2rem]">
         <div className={`relative flex min-h-56 items-center justify-center overflow-hidden px-3 py-5 sm:min-h-72 sm:px-8 sm:py-8 lg:min-h-80 ${slug === "masterplan-business" ? "bg-black" : "bg-white"}`}>
           <div className="relative flex h-full w-full items-center justify-center">
-            {organization.logoUrl ? <img src={organization.logoUrl} alt={`Logo ${displayTitle}`} className="max-h-56 w-full max-w-5xl object-contain sm:max-h-72 lg:max-h-80" /> : <Building2 className="h-16 w-16 text-slate-400" />}
+            {organization.logoUrl ? <img src={organization.logoUrl} alt={`Logo ${organizationName}`} className="max-h-56 w-full max-w-5xl object-contain sm:max-h-72 lg:max-h-80" /> : <Building2 className="h-16 w-16 text-slate-400" />}
           </div>
         </div>
       </header>
 
-      <div className="mb-8 flex flex-col items-center gap-4 px-2 text-center sm:mb-10"><div><h1 className="text-2xl font-semibold tracking-tight text-[#102c3d] sm:text-3xl">{displayTitle}</h1><p className="mt-2 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Tabela de Imóveis</p></div>{primaryPhone && !profile && <a href={`https://wa.me/${primaryPhone}?text=${encodeURIComponent("Olá, gostaria de informações sobre os imóveis.")}`} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#20bd63] px-5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#12934a]"><MessageCircle className="h-5 w-5" /> Falar no WhatsApp</a>}</div>
+      <div className="mb-8 flex flex-col items-center gap-4 px-2 text-center sm:mb-10"><div><h1 className="text-2xl font-semibold tracking-tight text-[#102c3d] sm:text-3xl">Tabela de Imóveis <span className="font-normal text-slate-500">— {catalogPeriod}</span></h1></div>{primaryPhone && !profile && <a href={`https://wa.me/${primaryPhone}?text=${encodeURIComponent("Olá, gostaria de informações sobre os imóveis.")}`} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#20bd63] px-5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#12934a]"><MessageCircle className="h-5 w-5" /> Falar no WhatsApp</a>}</div>
 
       {profile && <section className="mb-8 rounded-3xl border border-[#dce8df] bg-white p-5 shadow-sm sm:p-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-4"><div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[#102c3d] text-xl font-bold text-white">{profile.photoUrl ? <img src={profile.photoUrl} alt={profile.name} className="h-full w-full object-cover" /> : initials(profile.name)}</div><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#b38b3d]">Responsável</p><h2 className="mt-1 text-2xl font-semibold text-[#102c3d]">{profile.name}</h2>{profile.creci && <p className="mt-1 text-sm text-slate-500">{profile.creci}</p>}</div></div>{primaryPhone && <a href={`https://wa.me/${primaryPhone}?text=${encodeURIComponent(`Olá ${profile.name}, gostaria de informações sobre os imóveis.`)}`} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#20bd63] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#12934a]"><MessageCircle className="h-5 w-5" /> WhatsApp de {profile.name.split(" ")[0]}</a>}</div></section>}
 

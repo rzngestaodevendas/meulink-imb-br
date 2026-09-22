@@ -47,6 +47,7 @@ export async function ensureOrganizationColumns() {
   if (!binding) throw new Error("Database is not available");
   const columns = [
     ["entityType", "TEXT NOT NULL DEFAULT 'construtora'"],
+    ["catalogPeriod", "TEXT NOT NULL DEFAULT 'Setembro de 2026'"],
     ["logoUrl", "TEXT"],
     ["contactName", "TEXT"],
     ["contactPhone", "TEXT"],
