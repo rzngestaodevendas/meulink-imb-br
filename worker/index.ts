@@ -15,6 +15,13 @@ type PreviewProperty = {
   coverPhoto?: string | null;
 };
 
+type PreviewCatalog = {
+  name: string;
+  publicName?: string | null;
+  catalogPeriod?: string | null;
+  logoUrl?: string | null;
+};
+
 let previewColumnsReady = false;
 async function ensurePreviewColumns(database: D1Database) {
   if (previewColumnsReady) return;
@@ -37,6 +44,21 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
   const database = (env as unknown as { DB?: D1Database }).DB;
   if (!database) return null;
   await ensurePreviewColumns(database);
+
+  const catalogMatch = url.pathname.match(/^\/tabelas?\/([^/]+)(?:\/(?:todos|compartilhar))?$/i);
+  if (catalogMatch) {
+    const catalog = await database.prepare("SELECT name, publicName, catalogPeriod, logoUrl FROM organizations WHERE slug = ? LIMIT 1").bind(catalogMatch[1]).first<PreviewCatalog>();
+    if (catalog) {
+      const catalogName = catalog.publicName || catalog.name;
+      const period = catalog.catalogPeriod ? ` — ${catalog.catalogPeriod}` : "";
+      const image = catalog.logoUrl ? new URL(catalog.logoUrl, url.origin).toString() : undefined;
+      return {
+        title: `${catalogName} | Tabela de imóveis`,
+        description: `Consulte os imóveis disponíveis da ${catalogName}${period}. Veja fotos, valores e informações para encontrar o imóvel ideal.`,
+        image,
+      };
+    }
+  }
 
   let property: PreviewProperty | null = null;
   const codeMatch = url.pathname.match(/^\/(?:imovel|corretor\/[^/]+\/imovel|corretora\/[^/]+\/imovel)\/(ML-\d+)$/i);
