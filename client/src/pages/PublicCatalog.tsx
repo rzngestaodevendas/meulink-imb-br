@@ -33,6 +33,7 @@ export default function PublicCatalog() {
   const primaryPhone = (profile?.phone || properties[0]?.responsiblePhone || organization.contactPhone || "").replace(/\D/g, "");
   const organizationName = organization.publicName || organization.name;
   const catalogPeriod = organization.catalogPeriod || "Setembro de 2026";
+  const isMasterplan = slug === "masterplan-business" || organizationName.toLowerCase().includes("masterplan");
   const publicBase = `${window.location.origin}/tabela/${slug}`;
   const unsignedPropertyUrl = (code: string) => `${window.location.origin}/imovel/${code}`;
   const signedPortalUrl = (id: number) => `${publicBase}?compartilhar=${id}`;
@@ -40,8 +41,8 @@ export default function PublicCatalog() {
 
   return <div className="min-h-screen bg-[#f5f7f8] text-[#102c3d]">
     <main className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
-      <header className="relative mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(16,44,61,0.08)] sm:rounded-[2rem]">
-        <div className={`relative flex min-h-56 items-center justify-center overflow-hidden px-3 py-5 sm:min-h-72 sm:px-8 sm:py-8 lg:min-h-80 ${slug === "masterplan-business" ? "bg-black" : "bg-white"}`}>
+      <header className={`relative mb-8 overflow-hidden rounded-2xl border shadow-[0_18px_50px_rgba(16,44,61,0.08)] sm:rounded-[2rem] ${isMasterplan ? "border-black bg-black" : "border-slate-200 bg-white"}`}>
+        <div className={`relative flex min-h-56 items-center justify-center overflow-hidden px-3 py-5 sm:min-h-72 sm:px-8 sm:py-8 lg:min-h-80 ${isMasterplan ? "bg-black" : "bg-white"}`}>
           <div className="relative flex h-full w-full items-center justify-center">
             {organization.logoUrl ? <img src={organization.logoUrl} alt={`Logo ${organizationName}`} className="max-h-56 w-full max-w-5xl object-contain sm:max-h-72 lg:max-h-80" /> : <Building2 className="h-16 w-16 text-slate-400" />}
           </div>
