@@ -12,7 +12,21 @@ type PreviewProperty = {
   title: string;
   address: string | null;
   photos: string;
+  coverPhoto?: string | null;
 };
+
+let previewColumnsReady = false;
+async function ensurePreviewColumns(database: D1Database) {
+  if (previewColumnsReady) return;
+  for (const column of ["coverPhoto", "propertyPhotos", "developmentPhotos"]) {
+    try {
+      await database.prepare(`ALTER TABLE properties ADD COLUMN ${column} TEXT`).run();
+    } catch (error) {
+      if (!String(error).toLowerCase().includes("duplicate column")) throw error;
+    }
+  }
+  previewColumnsReady = true;
+}
 
 function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
@@ -22,18 +36,19 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
   const url = new URL(request.url);
   const database = (env as unknown as { DB?: D1Database }).DB;
   if (!database) return null;
+  await ensurePreviewColumns(database);
 
   let property: PreviewProperty | null = null;
   const codeMatch = url.pathname.match(/^\/(?:imovel|corretor\/[^/]+\/imovel|corretora\/[^/]+\/imovel)\/(ML-\d+)$/i);
   const token = url.searchParams.get("link");
   if (token) {
-    const result = await database.prepare("SELECT p.title, p.address, p.photos FROM shareLinks s INNER JOIN properties p ON p.id = s.propertyId WHERE s.token = ? AND s.enabled = 1 AND p.publicEnabled = 1 AND p.status = 'available' LIMIT 1").bind(token).first<PreviewProperty>();
+    const result = await database.prepare("SELECT p.title, p.address, p.photos, p.coverPhoto FROM shareLinks s INNER JOIN properties p ON p.id = s.propertyId WHERE s.token = ? AND s.enabled = 1 AND p.publicEnabled = 1 AND p.status = 'available' LIMIT 1").bind(token).first<PreviewProperty>();
     property = result || null;
   }
   if (!property && codeMatch) {
     const id = Number(codeMatch[1].slice(3));
     if (Number.isInteger(id) && id > 0) {
-      const result = await database.prepare("SELECT title, address, photos FROM properties WHERE id = ? AND publicEnabled = 1 AND status = 'available' LIMIT 1").bind(id).first<PreviewProperty>();
+      const result = await database.prepare("SELECT title, address, photos, coverPhoto FROM properties WHERE id = ? AND publicEnabled = 1 AND status = 'available' LIMIT 1").bind(id).first<PreviewProperty>();
       property = result || null;
     }
   }
@@ -42,7 +57,7 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
   let image: string | undefined;
   try {
     const photos = JSON.parse(property.photos || "[]") as unknown;
-    const cover = Array.isArray(photos) && typeof photos[0] === "string" ? photos[0] : "";
+    const cover = property.coverPhoto || (Array.isArray(photos) && typeof photos[0] === "string" ? photos[0] : "");
     if (cover) image = new URL(cover, url.origin).toString();
   } catch {
     image = undefined;

@@ -102,7 +102,7 @@ export async function ensurePropertyPrivateColumns() {
   if (_propertyPrivateColumnsReady) return;
   const binding = getD1Binding();
   if (!binding) throw new Error("Database is not available");
-  for (const [name, type] of [["commission", "TEXT"], ["bedrooms", "INTEGER"], ["privateArea", "TEXT"], ["developmentInfo", "TEXT"], ["mapUrl", "TEXT"]]) {
+  for (const [name, type] of [["commission", "TEXT"], ["bedrooms", "INTEGER"], ["privateArea", "TEXT"], ["developmentInfo", "TEXT"], ["mapUrl", "TEXT"], ["coverPhoto", "TEXT"], ["propertyPhotos", "TEXT"], ["developmentPhotos", "TEXT"]]) {
     try { await binding.prepare(`ALTER TABLE properties ADD COLUMN ${name} ${type}`).run(); }
     catch (error) { if (!String(error).toLowerCase().includes("duplicate column")) throw error; }
   }

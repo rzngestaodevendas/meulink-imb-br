@@ -23,8 +23,9 @@ export default function PublicProperty() {
 
   const { property, broker } = activeQuery.data;
   const photos = property.photos || [];
-  const coverPhoto = photos[0];
-  const galleryPhotos = photos.slice(1);
+  const coverPhoto = property.coverPhoto || photos[0];
+  const galleryPhotos = property.propertyPhotos?.length ? property.propertyPhotos : photos.slice(1);
+  const developmentPhotos = property.developmentPhotos || [];
   const currentPhoto = galleryPhotos[photoIndex];
   const whatsapp = broker?.phone ? `https://wa.me/${broker.phone}?text=${encodeURIComponent(`Olá ${broker.name.split(/\s+/)[0]}, vi a página do imóvel "${property.title}" (${property.price || "valor sob consulta"}) e gostaria de mais informações e de agendar uma visita.`)}` : "";
   const region = property.address?.match(/Capão da Canoa|Xangri-Lá|Maquiné|Parobé|Osório|Tramandaí|Torres|Carlos Barbosa|Porto Belo/i)?.[0];
@@ -51,6 +52,8 @@ export default function PublicProperty() {
       {property.details.length > 0 && <section className="mt-7 rounded-3xl bg-white p-6 shadow-sm sm:p-8"><SectionHeading title="Características" /><div className="grid gap-2 sm:grid-cols-2">{property.details.map(detail => <div key={detail} className="flex items-center gap-2 rounded-xl border border-slate-100 bg-[#f8fafb] px-3 py-3 text-sm text-slate-600"><CheckCircle2 className="h-4 w-4 shrink-0 text-[#20bd63]" />{detail}</div>)}</div></section>}
 
       {property.developmentInfo && <section className="mt-7 rounded-3xl bg-white p-6 shadow-sm sm:p-8"><SectionHeading title="Sobre o empreendimento" /><p className="whitespace-pre-line text-sm leading-7 text-slate-600 sm:text-[15px]">{property.developmentInfo}</p></section>}
+
+      {developmentPhotos.length > 0 && <section className="mt-7 overflow-hidden rounded-[2rem] bg-white p-2 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-3 px-1"><h2 className="text-base font-semibold text-[#102c3d] sm:text-lg">Fotos do empreendimento</h2><span className="text-xs font-medium text-slate-500">{developmentPhotos.length} fotos</span></div><div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{developmentPhotos.map((photo, index) => <button type="button" key={photo} onClick={() => window.open(photo, "_blank", "noopener,noreferrer")} className="overflow-hidden rounded-xl bg-[#e8edef]"><img src={photo} alt={`Foto ${index + 1} do empreendimento`} className="aspect-[4/3] h-full w-full object-cover transition hover:scale-105" /></button>)}</div></section>}
 
       {mapEmbedUrl && <section className="mt-7 rounded-3xl bg-white p-6 shadow-sm sm:p-8"><SectionHeading title="Localização" /><div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100"><iframe title={`Mapa de localização de ${property.title}`} src={mapEmbedUrl} className="h-72 w-full sm:h-96" loading="lazy" referrerPolicy="no-referrer-when-downgrade" /></div>{mapLink && <a href={mapLink} target="_blank" rel="noreferrer" className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#d7b874] bg-white px-5 text-sm font-bold text-[#102c3d] shadow-sm transition hover:bg-[#fdfaf4]"><MapPin className="h-4 w-4 text-[#b38b3d]" /> Abrir localização no mapa</a>}</section>}
 
