@@ -47,7 +47,8 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
 
   const catalogMatch = url.pathname.match(/^\/tabelas?\/([^/]+)(?:\/(?:todos|compartilhar))?$/i);
   if (catalogMatch) {
-    const catalog = await database.prepare("SELECT name, publicName, catalogPeriod, logoUrl FROM organizations WHERE slug = ? LIMIT 1").bind(catalogMatch[1]).first<PreviewCatalog>();
+    const catalogSlug = catalogMatch[1].toLowerCase() === "masterplan-business" ? "felipe-demo" : catalogMatch[1];
+    const catalog = await database.prepare("SELECT name, publicName, catalogPeriod, logoUrl FROM organizations WHERE slug = ? LIMIT 1").bind(catalogSlug).first<PreviewCatalog>();
     if (catalog) {
       const catalogName = catalog.publicName || catalog.name;
       const period = catalog.catalogPeriod ? ` — ${catalog.catalogPeriod}` : "";
