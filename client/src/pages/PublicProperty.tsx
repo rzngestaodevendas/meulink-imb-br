@@ -24,6 +24,7 @@ export default function PublicProperty() {
   const { property, broker } = activeQuery.data;
   const photos = property.photos || [];
   const coverPhoto = property.coverPhoto || photos[0];
+  const garageSpaces = property.garageSpaces != null ? String(property.garageSpaces) : "—";
   const galleryPhotos = property.propertyPhotos?.length ? property.propertyPhotos : photos.slice(1);
   const developmentPhotos = property.developmentPhotos || [];
   const currentPhoto = galleryPhotos[photoIndex];
@@ -40,10 +41,10 @@ export default function PublicProperty() {
       <section className="relative -mx-4 min-h-[390px] overflow-hidden rounded-none bg-[#102c3d] shadow-[0_24px_70px_rgba(16,44,61,0.2)] sm:mx-0 sm:min-h-[520px] sm:rounded-[2rem]">
         {coverPhoto && <img src={coverPhoto} alt={`Capa de ${property.title}`} className="absolute inset-0 h-full w-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-t from-[#06141d]/90 via-[#102c3d]/35 to-[#102c3d]/10" />
-        <div className="relative z-10 flex min-h-[390px] flex-col justify-end p-5 text-white sm:min-h-[520px] sm:p-10 lg:p-14"><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f0d99e]">Imóvel disponível</p><h1 className="mt-3 max-w-4xl text-3xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">{property.title}</h1><p className="mt-5 flex max-w-3xl items-start gap-2 text-sm leading-relaxed text-white/85 sm:text-base"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#f0d99e]" />{property.address || "Endereço sob consulta"}</p></div>
+        <div className="relative z-10 flex min-h-[390px] flex-col justify-end p-5 text-white sm:min-h-[520px] sm:p-10 lg:p-14"><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f0d99e]">{property.propertyType || "Imóvel"} disponível</p><h1 className="mt-3 max-w-4xl text-3xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">{property.title}</h1>{property.developmentName && <p className="mt-2 text-base font-semibold text-[#f0d99e] sm:text-xl">{property.developmentName}</p>}<p className="mt-5 flex max-w-3xl items-start gap-2 text-sm leading-relaxed text-white/85 sm:text-base"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#f0d99e]" />{property.address || "Endereço sob consulta"}</p></div>
       </section>
 
-      <section className="relative z-10 mt-5 px-0 sm:px-8"><div className="grid gap-3 rounded-2xl bg-white p-4 shadow-xl sm:grid-cols-3 sm:p-5"><QuickFact value={bedrooms || "—"} label="Dormitórios" /><QuickFact value={area ? (area.includes("m²") ? area : `${area} m²`) : "—"} label="Área privativa" /><QuickFact value={region || "Consultar"} label="Localização" /></div></section>
+      <section className="relative z-10 mt-5 px-0 sm:px-8"><div className="grid gap-3 rounded-2xl bg-white p-4 shadow-xl sm:grid-cols-2 sm:p-5 lg:grid-cols-4"><QuickFact value={bedrooms || "—"} label="Dormitórios" /><QuickFact value={area ? (area.includes("m²") ? area : `${area} m²`) : "—"} label="Área privativa" /><QuickFact value={region || "Consultar"} label="Localização" /><QuickFact value={garageSpaces} label="Vagas de garagem" /></div></section>
 
       {property.notes && <section className="mt-7 rounded-3xl bg-white p-6 shadow-sm sm:p-8"><SectionHeading title="Sobre o imóvel" /><p className="whitespace-pre-line text-sm leading-7 text-slate-600 sm:text-[15px]">{property.notes}</p></section>}
 

@@ -17,6 +17,10 @@ const statusSchema = z.enum(["available", "reserved", "sold", "unavailable", "up
 export const propertyPayload = z.object({
   title: z.string().trim().min(2).max(240),
   address: z.string().trim().max(2000).optional().default(""),
+  developmentName: z.string().trim().max(240).optional().default(""),
+  propertyType: z.enum(["Apartamento", "Casa térrea", "Sobrado", "Loja", "Lote", "Área de terra", "Pavilhão industrial", "Pavilhão comercial", "Loja comercial", "Sítio", "Loft"]).optional().default("Apartamento"),
+  garageSpaces: z.number().int().min(0).max(99).nullable().optional().default(null),
+  unitNumber: z.string().trim().max(80).optional().default(""),
   bedrooms: z.number().int().min(0).max(99).nullable().optional().default(null),
   privateArea: z.string().trim().max(80).optional().default(""),
   developmentInfo: z.string().optional().default(""),
@@ -48,6 +52,10 @@ function parseProperty(row: typeof properties.$inferSelect, includeInternal = tr
     slug: row.slug,
     title: row.title,
     address: row.address,
+    developmentName: row.developmentName,
+    propertyType: row.propertyType || "Apartamento",
+    garageSpaces: row.garageSpaces,
+    ...(includeInternal ? { unitNumber: row.unitNumber } : {}),
     bedrooms: row.bedrooms,
     privateArea: row.privateArea,
     developmentInfo: row.developmentInfo,
@@ -381,7 +389,7 @@ export const appRouter = router({
       const scope = await requireCompanyAdmin(ctx);
       const baseSlug = input.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 150) || `imovel-${nanoid(8)}`;
       const slug = `${baseSlug}-${nanoid(5).toLowerCase()}`;
-      await db.insert(properties).values({ organizationId: scope.organizationId, slug, title: input.title, address: input.address, bedrooms: input.bedrooms ?? null, privateArea: input.privateArea || null, developmentInfo: input.developmentInfo || null, mapUrl: input.mapUrl || null, responsibleName: input.responsibleName, responsiblePhone: input.responsiblePhone, details: JSON.stringify(input.details), price: input.price, commission: input.commission, notes: input.notes, photos: JSON.stringify([input.coverPhoto || input.photos[0] || "", ...(input.propertyPhotos?.length ? input.propertyPhotos : input.photos.slice(1))].filter(Boolean)), coverPhoto: input.coverPhoto || input.photos[0] || null, propertyPhotos: JSON.stringify(input.propertyPhotos?.length ? input.propertyPhotos : input.photos.slice(1)), developmentPhotos: JSON.stringify(input.developmentPhotos || []), status: input.status, publicEnabled: input.publicEnabled ? 1 : 0 });
+      await db.insert(properties).values({ organizationId: scope.organizationId, slug, title: input.title, address: input.address, developmentName: input.developmentName, propertyType: input.propertyType, garageSpaces: input.garageSpaces ?? null, unitNumber: input.unitNumber || null, bedrooms: input.bedrooms ?? null, privateArea: input.privateArea || null, developmentInfo: input.developmentInfo || null, mapUrl: input.mapUrl || null, responsibleName: input.responsibleName, responsiblePhone: input.responsiblePhone, details: JSON.stringify(input.details), price: input.price, commission: input.commission, notes: input.notes, photos: JSON.stringify([input.coverPhoto || input.photos[0] || "", ...(input.propertyPhotos?.length ? input.propertyPhotos : input.photos.slice(1))].filter(Boolean)), coverPhoto: input.coverPhoto || input.photos[0] || null, propertyPhotos: JSON.stringify(input.propertyPhotos?.length ? input.propertyPhotos : input.photos.slice(1)), developmentPhotos: JSON.stringify(input.developmentPhotos || []), status: input.status, publicEnabled: input.publicEnabled ? 1 : 0 });
       const [created] = await db.select().from(properties).where(and(eq(properties.organizationId, scope.organizationId), eq(properties.slug, slug))).limit(1);
       if (!created) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível carregar o imóvel criado." });
       await recordAudit(ctx, scope.organizationId, "property.created", "property", created.id, { title: created.title });
@@ -395,7 +403,7 @@ export const appRouter = router({
       const scope = await requireCompanyAdmin(ctx);
       const values = input.rows.map(row => {
         const baseSlug = row.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 150) || `imovel-${nanoid(8)}`;
-        return { organizationId: scope.organizationId, slug: `${baseSlug}-${nanoid(5).toLowerCase()}`, title: row.title, address: row.address, bedrooms: row.bedrooms ?? null, privateArea: row.privateArea || null, developmentInfo: row.developmentInfo || null, mapUrl: row.mapUrl || null, responsibleName: row.responsibleName, responsiblePhone: row.responsiblePhone, details: JSON.stringify(row.details), price: row.price, commission: row.commission, notes: row.notes, photos: JSON.stringify([row.coverPhoto || row.photos[0] || "", ...(row.propertyPhotos?.length ? row.propertyPhotos : row.photos.slice(1))].filter(Boolean)), coverPhoto: row.coverPhoto || row.photos[0] || null, propertyPhotos: JSON.stringify(row.propertyPhotos?.length ? row.propertyPhotos : row.photos.slice(1)), developmentPhotos: JSON.stringify(row.developmentPhotos || []), status: row.status, publicEnabled: row.publicEnabled ? 1 : 0 };
+        return { organizationId: scope.organizationId, slug: `${baseSlug}-${nanoid(5).toLowerCase()}`, title: row.title, address: row.address, developmentName: row.developmentName, propertyType: row.propertyType, garageSpaces: row.garageSpaces ?? null, unitNumber: row.unitNumber || null, bedrooms: row.bedrooms ?? null, privateArea: row.privateArea || null, developmentInfo: row.developmentInfo || null, mapUrl: row.mapUrl || null, responsibleName: row.responsibleName, responsiblePhone: row.responsiblePhone, details: JSON.stringify(row.details), price: row.price, commission: row.commission, notes: row.notes, photos: JSON.stringify([row.coverPhoto || row.photos[0] || "", ...(row.propertyPhotos?.length ? row.propertyPhotos : row.photos.slice(1))].filter(Boolean)), coverPhoto: row.coverPhoto || row.photos[0] || null, propertyPhotos: JSON.stringify(row.propertyPhotos?.length ? row.propertyPhotos : row.photos.slice(1)), developmentPhotos: JSON.stringify(row.developmentPhotos || []), status: row.status, publicEnabled: row.publicEnabled ? 1 : 0 };
       });
       await db.insert(properties).values(values);
       await recordAudit(ctx, scope.organizationId, "property.bulk_created", "property", undefined, { count: values.length });
@@ -409,7 +417,7 @@ export const appRouter = router({
       const scope = await requireCompanyAdmin(ctx);
       const [existing] = await db.select().from(properties).where(and(eq(properties.id, input.id), eq(properties.organizationId, scope.organizationId))).limit(1);
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Imóvel não encontrado." });
-      await db.update(properties).set({ title: input.data.title, address: input.data.address, bedrooms: input.data.bedrooms ?? null, privateArea: input.data.privateArea || null, developmentInfo: input.data.developmentInfo || null, mapUrl: input.data.mapUrl || null, responsibleName: input.data.responsibleName, responsiblePhone: input.data.responsiblePhone, details: JSON.stringify(input.data.details), price: input.data.price, commission: input.data.commission, notes: input.data.notes, photos: JSON.stringify([input.data.coverPhoto || input.data.photos[0] || "", ...(input.data.propertyPhotos?.length ? input.data.propertyPhotos : input.data.photos.slice(1))].filter(Boolean)), coverPhoto: input.data.coverPhoto || input.data.photos[0] || null, propertyPhotos: JSON.stringify(input.data.propertyPhotos?.length ? input.data.propertyPhotos : input.data.photos.slice(1)), developmentPhotos: JSON.stringify(input.data.developmentPhotos || []), status: input.data.status, publicEnabled: input.data.publicEnabled ? 1 : 0 }).where(eq(properties.id, input.id));
+      await db.update(properties).set({ title: input.data.title, address: input.data.address, developmentName: input.data.developmentName, propertyType: input.data.propertyType, garageSpaces: input.data.garageSpaces ?? null, unitNumber: input.data.unitNumber || null, bedrooms: input.data.bedrooms ?? null, privateArea: input.data.privateArea || null, developmentInfo: input.data.developmentInfo || null, mapUrl: input.data.mapUrl || null, responsibleName: input.data.responsibleName, responsiblePhone: input.data.responsiblePhone, details: JSON.stringify(input.data.details), price: input.data.price, commission: input.data.commission, notes: input.data.notes, photos: JSON.stringify([input.data.coverPhoto || input.data.photos[0] || "", ...(input.data.propertyPhotos?.length ? input.data.propertyPhotos : input.data.photos.slice(1))].filter(Boolean)), coverPhoto: input.data.coverPhoto || input.data.photos[0] || null, propertyPhotos: JSON.stringify(input.data.propertyPhotos?.length ? input.data.propertyPhotos : input.data.photos.slice(1)), developmentPhotos: JSON.stringify(input.data.developmentPhotos || []), status: input.data.status, publicEnabled: input.data.publicEnabled ? 1 : 0 }).where(eq(properties.id, input.id));
       const [updated] = await db.select().from(properties).where(eq(properties.id, input.id)).limit(1);
       await recordAudit(ctx, scope.organizationId, "property.updated", "property", input.id, { title: input.data.title, status: input.data.status });
       return parseProperty(updated!);
