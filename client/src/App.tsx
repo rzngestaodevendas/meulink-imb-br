@@ -45,6 +45,11 @@ function FriendlyPath() {
   return /^ML-\d+$/i.test(value) ? <PublicProperty /> : <BrokerPortal />;
 }
 
+function PublicTableEntry() {
+  const search = new URLSearchParams(window.location.search);
+  return search.has("acesso") || search.has("compartilhar") ? <BrokerPortal /> : <PublicCatalog />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -54,10 +59,10 @@ function Router() {
       <Route path="/corretora/:brokerSlug/imovel/:code" component={PublicProperty} />
       <Route path="/tabelas/:slug/compartilhar" component={PublicCatalog} />
       <Route path="/tabelas/:slug/:responsible" component={PublicCatalog} />
-      <Route path="/tabelas/:slug" component={BrokerPortal} />
+      <Route path="/tabelas/:slug" component={PublicTableEntry} />
       <Route path="/tabela/:slug/compartilhar" component={PublicCatalog} />
       <Route path="/tabela/:slug/:responsible" component={PublicCatalog} />
-      <Route path="/tabela/:slug" component={BrokerPortal} />
+      <Route path="/tabela/:slug" component={PublicTableEntry} />
       <Route path="/painelgestao" component={ProtectedApp} />
       <Route path="/painelgestao/imoveis" component={ProtectedProperties} />
       <Route path="/painelgestao/equipe" component={ProtectedTeam} />
