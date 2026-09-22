@@ -8,11 +8,11 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { toast } from "sonner";
 
-type EntityType = "construtora" | "imobiliaria" | "corretor";
+type EntityType = "construtora" | "imobiliaria" | "corretor" | "investidor";
 type Organization = { id: number; entityType?: EntityType; slug: string; name: string; publicName: string | null; logoUrl: string | null; contactName: string | null; contactPhone: string | null; contactEmail: string | null; contactAddress: string | null; websiteUrl: string | null; tableType: string; developmentName: string | null; availablePropertyCount?: number };
 type ResponsibleProfile = { id: number; name: string; phone: string | null; email: string | null; creci: string | null; photoUrl: string | null; bio: string | null; persisted?: boolean };
 
-const entityLabels: Record<EntityType, string> = { construtora: "Construtora", imobiliaria: "Imobiliária", corretor: "Corretor" };
+const entityLabels: Record<EntityType, string> = { construtora: "Construtora", imobiliaria: "Imobiliária", corretor: "Corretor", investidor: "Investidor" };
 const blankProfile = { name: "", phone: "", email: "", creci: "", photoUrl: "", bio: "" };
 const profileSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 

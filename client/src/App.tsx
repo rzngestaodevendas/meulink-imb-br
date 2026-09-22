@@ -52,6 +52,9 @@ function Router() {
       <Route path="/imovel/:code" component={PublicProperty} />
       <Route path="/corretor/:brokerSlug/imovel/:code" component={PublicProperty} />
       <Route path="/corretora/:brokerSlug/imovel/:code" component={PublicProperty} />
+      <Route path="/tabelas/:slug/compartilhar" component={PublicCatalog} />
+      <Route path="/tabelas/:slug/:responsible" component={PublicCatalog} />
+      <Route path="/tabelas/:slug" component={BrokerPortal} />
       <Route path="/tabela/:slug/compartilhar" component={PublicCatalog} />
       <Route path="/tabela/:slug/:responsible" component={PublicCatalog} />
       <Route path="/tabela/:slug" component={BrokerPortal} />

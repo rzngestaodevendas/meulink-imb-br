@@ -43,6 +43,14 @@ describe("propertyPayload", () => {
     expect(result.notes).toBe("");
   });
 
+  it("accepts long descriptions without changing spaces or line breaks", () => {
+    const notes = "  TÍTULO DO IMÓVEL\n\n" + "Descrição detalhada. ".repeat(700);
+    const developmentInfo = "  EMPREENDIMENTO\n\n" + "Infraestrutura completa. ".repeat(700);
+    const result = propertyPayload.parse({ title: "Casa longa", details: [], photos: [], notes, developmentInfo, status: "available", publicEnabled: true });
+    expect(result.notes).toBe(notes);
+    expect(result.developmentInfo).toBe(developmentInfo);
+  });
+
   it("accepts a batch of normalized properties", () => {
     const result = bulkPropertyInput.safeParse({ rows: [{ title: "Casa Horizonte", details: ["03 dormitórios"], photos: ["https://cdn.example.com/casa.jpg"], status: "available", publicEnabled: true }] });
     expect(result.success).toBe(true);
