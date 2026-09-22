@@ -15,12 +15,18 @@ type PortalProperty = {
   code: string;
   title: string;
   address: string | null;
+  propertyType?: string | null;
+  unitNumber?: string | null;
+  bedrooms?: number | null;
+  privateArea?: string | null;
+  garageSpaces?: number | null;
   responsibleName?: string | null;
   responsiblePhone?: string | null;
   developmentInfo?: string | null;
   notes?: string | null;
   details: string[];
   price: string | null;
+  commission?: string | null;
   photos: string[];
   status: string;
 };
