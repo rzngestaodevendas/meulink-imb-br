@@ -13,12 +13,14 @@ const profileSlug = (name: string) => name.toLowerCase().normalize("NFD").replac
 const initials = (name: string) => name.split(" ").map(part => part[0]).slice(0, 2).join("").toUpperCase();
 
 export default function PublicCatalog() {
+  const [, baseParams] = useRoute("/tabela/:slug");
+  const [, pluralBaseParams] = useRoute("/tabelas/:slug");
   const [, params] = useRoute("/tabela/:slug/:responsible");
   const [, pluralParams] = useRoute("/tabelas/:slug/:responsible");
   const [, allParams] = useRoute("/tabela/:slug/compartilhar");
   const [, pluralAllParams] = useRoute("/tabelas/:slug/compartilhar");
   const search = new URLSearchParams(window.location.search);
-  const slug = params?.slug || pluralParams?.slug || allParams?.slug || pluralAllParams?.slug || "";
+  const slug = baseParams?.slug || pluralBaseParams?.slug || params?.slug || pluralParams?.slug || allParams?.slug || pluralAllParams?.slug || "";
   const routeResponsible = params?.responsible || pluralParams?.responsible;
   const responsible = routeResponsible && routeResponsible !== "compartilhar" && routeResponsible !== "todos" ? routeResponsible : (search.get("responsavel") || undefined);
   const catalog = trpc.portal.publicCatalog.useQuery({ slug, responsible }, { enabled: Boolean(slug) });
