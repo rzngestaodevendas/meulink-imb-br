@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Expand, MapPin, MessageCircle, ShieldCheck, X } from "lucide-react";
+import { ArrowLeft, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Expand, MapPin, MessageCircle, Share2, ShieldCheck, X } from "lucide-react";
 import { useState } from "react";
 import { useRoute } from "wouter";
 
@@ -16,6 +16,7 @@ export default function PublicProperty() {
   const activeQuery = token ? propertyQuery : (brokerSlug ? signedFriendlyQuery : unsignedQuery);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   if (!token && !code) return <EmptyState title="Link de imóvel inválido" text="Solicite um novo link público do imóvel." />;
   if (activeQuery.isLoading) return <div className="grid min-h-screen place-items-center bg-[#f4f6f7] text-sm text-slate-500">Preparando sua visita...</div>;
@@ -36,13 +37,23 @@ export default function PublicProperty() {
   const area = property.privateArea || `${property.title} ${(property.details || []).join(" ")} ${property.notes || ""}`.match(/([\d.,]+)\s*m²/i)?.[1];
   const mapLink = property.mapUrl || (property.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.address)}` : "");
   const mapEmbedUrl = property.address ? `https://www.google.com/maps?q=${encodeURIComponent(property.address)}&output=embed` : "";
+  async function shareProperty() {
+    const shareData = { title: property.title, text: `Confira este imóvel: ${property.title}`, url: window.location.href };
+    if (navigator.share) {
+      await navigator.share(shareData).catch(() => undefined);
+      return;
+    }
+    await navigator.clipboard?.writeText(window.location.href);
+    setShareCopied(true);
+    window.setTimeout(() => setShareCopied(false), 2200);
+  }
 
   return <main className="min-h-screen bg-[#f4f6f7] text-[#102c3d]">
     <div className="h-1.5 bg-gradient-to-r from-[#102c3d] via-[#d7b874] to-[#20bd63]" />
     <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
       <section className="relative -mx-4 min-h-[390px] overflow-hidden rounded-none bg-[#102c3d] shadow-[0_24px_70px_rgba(16,44,61,0.2)] sm:mx-0 sm:min-h-[520px] sm:rounded-[2rem]">
         {coverPhoto && <img src={coverPhoto} alt={`Capa de ${property.title}`} className="absolute inset-0 h-full w-full object-cover" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#06141d]/90 via-[#102c3d]/35 to-[#102c3d]/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#06141d]/90 via-[#102c3d]/35 to-[#102c3d]/10" /><button type="button" onClick={() => void shareProperty()} className="absolute right-4 top-4 z-20 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/30 bg-[#102c3d]/75 px-4 text-sm font-bold text-white shadow-lg backdrop-blur transition hover:bg-[#102c3d] sm:right-6 sm:top-6"><Share2 className="h-4 w-4" />{shareCopied ? "Link copiado" : "Compartilhar"}</button>
         <div className="relative z-10 flex min-h-[390px] flex-col justify-end p-5 text-white sm:min-h-[520px] sm:p-10 lg:p-14"><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f0d99e]">{property.propertyType || "Imóvel"} disponível</p><h1 className="mt-3 max-w-4xl text-2xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">{property.title}</h1>{property.developmentName && <p className="mt-2 text-base font-semibold text-[#f0d99e] sm:text-xl">{property.developmentName}</p>}<p className="mt-5 flex max-w-3xl items-start gap-2 text-sm leading-relaxed text-white/85 sm:text-base"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#f0d99e]" />{property.address || "Endereço sob consulta"}</p></div>
       </section>
 
