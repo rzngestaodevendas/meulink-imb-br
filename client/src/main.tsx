@@ -16,7 +16,8 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
 
-  if (!isUnauthorized || window.location.pathname.startsWith("/painelgestao")) return;
+  const isTablePortal = window.location.pathname.startsWith("/tabela/") || window.location.pathname.startsWith("/tabelas/");
+  if (!isUnauthorized || window.location.pathname.startsWith("/painelgestao") || isTablePortal) return;
 
   startLogin();
 };
