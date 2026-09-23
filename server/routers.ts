@@ -99,7 +99,7 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
-    register: publicProcedure.input(z.object({ organizationId: z.number().int().positive(), name: z.string().trim().min(5).max(180), email: z.string().trim().email(), password: z.string().min(8).max(200), profileType: z.enum(["corretor", "corretora"]).default("corretor"), whatsapp: z.string().regex(/^\d{12,15}$/), creci: z.string().trim().min(2).max(40), profilePhotoUrl: z.string().trim().startsWith("/media/").optional().default("") })).mutation(async ({ ctx, input }) => {
+    register: publicProcedure.input(z.object({ organizationId: z.number().int().positive(), name: z.string().trim().min(5).max(180), email: z.string().trim().email(), password: z.string().min(8).max(200), profileType: z.enum(["corretor", "corretora"]).default("corretor"), whatsapp: z.string().regex(/^\d{12,15}$/), creci: z.string().trim().min(2).max(40), profilePhotoUrl: z.string().trim().startsWith("/media/") })).mutation(async ({ ctx, input }) => {
       await ensurePasswordColumn(); await ensureBrokerProfileColumns();
       const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const email = input.email.toLowerCase();
