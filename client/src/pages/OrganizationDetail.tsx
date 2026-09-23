@@ -21,14 +21,16 @@ export default function OrganizationDetail() {
   const [, setLocation] = useLocation();
   const id = Number(params?.id || 0);
   const organizations = trpc.organizations.list.useQuery();
-  const select = trpc.organizations.select.useMutation();
+  const utils = trpc.useUtils();
+  const select = trpc.organizations.select.useMutation({ onSuccess: async () => { await Promise.all([utils.catalog.list.invalidate(), utils.responsibleProfiles.list.invalidate(), utils.organizations.list.invalidate()]); } });
   const deleteOrganization = trpc.organizations.delete.useMutation({ onSuccess: () => setLocation("/painelgestao/construtoras") });
   const selected = useRef(false);
   const organization = (organizations.data as Organization[] | undefined)?.find(item => item.id === id);
 
+  useEffect(() => { selected.current = false; }, [id]);
   useEffect(() => {
     if (id > 0 && organization && !selected.current) { selected.current = true; select.mutate({ organizationId: id }); }
-  }, [id, Boolean(organization)]);
+  }, [id, organization?.id]);
 
   if (organizations.isLoading || select.isPending) return <div className="grid min-h-[60vh] place-items-center text-sm text-slate-500">Abrindo tabela...</div>;
   if (!organization) return <Card><CardContent className="p-8 text-center"><p className="font-semibold text-[#102c3d]">Tabela não encontrada</p><Button className="mt-4" onClick={() => setLocation("/painelgestao/construtoras")}>Voltar às tabelas</Button></CardContent></Card>;
