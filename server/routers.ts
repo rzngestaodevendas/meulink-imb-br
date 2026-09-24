@@ -44,7 +44,7 @@ export const propertyPayload = z.object({
 export const bulkPropertyInput = z.object({ rows: propertyPayload.array().min(1).max(200) });
 export const teamRoleSchema = z.enum(["company_admin", "broker"]);
 export const inviteInput = z.object({ email: z.string().trim().email().max(320), role: teamRoleSchema });
-export const auditActionSchema = z.enum(["organization.created", "organization.selected", "property.created", "property.bulk_created", "property.updated", "property.archived", "share_link.created", "team.invite_created", "team.invite_revoked", "team.invite_accepted", "team.role_updated", "team.member_removed"]);
+export const auditActionSchema = z.enum(["organization.created", "organization.selected", "property.created", "property.bulk_created", "property.updated", "property.archived", "property.deleted_permanently", "share_link.created", "team.invite_created", "team.invite_revoked", "team.invite_accepted", "team.role_updated", "team.member_removed"]);
 
 function parseProperty(row: typeof properties.$inferSelect, includeInternal = true) {
   const legacyPhotos = JSON.parse(row.photos || "[]") as string[];
@@ -439,6 +439,35 @@ export const appRouter = router({
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Imóvel não encontrado." });
       await db.update(properties).set({ status: "hidden", publicEnabled: 0 }).where(eq(properties.id, input.id));
       await recordAudit(ctx, scope.organizationId, "property.archived", "property", input.id, { title: existing.title });
+      return { success: true as const };
+    }),
+
+    deletePermanently: protectedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const scope = await requireCompanyAdmin(ctx);
+      const [existing] = await db.select().from(properties).where(and(eq(properties.id, input.id), eq(properties.organizationId, scope.organizationId))).limit(1);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Imóvel não encontrado." });
+
+      const photoUrls = new Set<string>();
+      for (const value of [existing.photos, existing.coverPhoto, existing.propertyPhotos, existing.developmentPhotos]) {
+        if (!value) continue;
+        try {
+          const parsed = JSON.parse(value) as unknown;
+          if (Array.isArray(parsed)) parsed.forEach(item => { if (typeof item === "string") photoUrls.add(item); });
+          else if (typeof parsed === "string") photoUrls.add(parsed);
+        } catch {
+          if (value.startsWith("/media/")) photoUrls.add(value);
+        }
+      }
+      const bucket = getPhotosBucket();
+      if (bucket) {
+        const allowedPrefix = `/media/properties/${scope.organizationId}/`;
+        await Promise.all(Array.from(photoUrls).filter(url => url.startsWith(allowedPrefix)).map(url => bucket.delete(url.slice("/media/".length))));
+      }
+      await db.delete(shareLinks).where(and(eq(shareLinks.propertyId, input.id), eq(shareLinks.organizationId, scope.organizationId)));
+      await db.delete(properties).where(and(eq(properties.id, input.id), eq(properties.organizationId, scope.organizationId)));
+      await recordAudit(ctx, scope.organizationId, "property.deleted_permanently", "property", input.id, { title: existing.title });
       return { success: true as const };
     }),
   }),
