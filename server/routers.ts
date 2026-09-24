@@ -79,7 +79,9 @@ function parseProperty(row: typeof properties.$inferSelect, includeInternal = tr
     propertyPhotos: storedPropertyPhotos.length ? storedPropertyPhotos : legacyPhotos.slice(1),
     developmentPhotos: JSON.parse(row.developmentPhotos || "[]") as string[],
     ...(includeInternal ? { sourceDriveUrl: row.sourceDriveUrl } : {}),
-    ...(includeInternal ? { mapDriveUrl: row.mapDriveUrl, photosDriveUrl: row.photosDriveUrl, videosDriveUrl: row.videosDriveUrl } : {}),
+    mapDriveUrl: row.mapDriveUrl,
+    photosDriveUrl: row.photosDriveUrl,
+    videosDriveUrl: row.videosDriveUrl,
     status: row.status,
     publicEnabled: Boolean(row.publicEnabled),
   };
