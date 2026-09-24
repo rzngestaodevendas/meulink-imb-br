@@ -56,6 +56,7 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
     const catalog = await database.prepare("SELECT id, name, publicName, catalogPeriod, logoUrl FROM organizations WHERE slug = ? LIMIT 1").bind(catalogSlug).first<PreviewCatalog>();
     if (catalog) {
       const catalogName = catalog.publicName || catalog.name;
+      const previewOrganizationName = catalogSlug.toLowerCase() === "atlantida-negocios-imobiliarios" || catalogName.toLowerCase().includes("atlântida negócios") || catalog.name.toLowerCase().includes("atlântida negócios") ? "Atlântida Negócios Imobiliários" : catalogName;
       const period = catalog.catalogPeriod ? ` — ${catalog.catalogPeriod}` : "";
       const image = catalog.logoUrl ? new URL(catalog.logoUrl, url.origin).toString() : undefined;
       const routeProfile = catalogMatch[2] && !["todos", "compartilhar"].includes(catalogMatch[2].toLowerCase()) ? catalogMatch[2] : "";
@@ -63,7 +64,7 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
         const profiles = await database.prepare("SELECT name FROM responsibleProfiles WHERE organizationId = ? ORDER BY name").bind(catalog.id).all<{ name: string }>();
         const profile = (profiles.results || []).find(item => profileSlug(item.name) === routeProfile.toLowerCase());
         const profileName = profile?.name || routeProfile.replace(/-/g, " ").replace(/\b\w/g, character => character.toUpperCase());
-        const title = `Tabela de imóveis - ${profileName} | ${catalog.name}`;
+        const title = `Tabela de imóveis - ${profileName} | ${previewOrganizationName}`;
         return {
           title,
           description: `${title}. Confira os imóveis disponíveis e entre em contato pelo WhatsApp.`,
@@ -130,6 +131,7 @@ async function serveAppWithPreview(request: Request, assets: Fetcher) {
   const updated = withTitle.replace("</head>", `    ${tags}\n  </head>`);
   const headers = new Headers(response.headers);
   headers.set("Content-Type", "text/html; charset=UTF-8");
+  headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
   return new Response(updated, { status: response.status, headers });
 }
 
