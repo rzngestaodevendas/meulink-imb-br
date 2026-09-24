@@ -16,6 +16,7 @@ type PreviewProperty = {
 };
 
 type PreviewCatalog = {
+  id: number;
   name: string;
   publicName?: string | null;
   catalogPeriod?: string | null;
@@ -39,20 +40,36 @@ function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
+function profileSlug(value: string) {
+  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 async function getPropertyPreview(request: Request): Promise<{ title: string; description: string; image?: string } | null> {
   const url = new URL(request.url);
   const database = (env as unknown as { DB?: D1Database }).DB;
   if (!database) return null;
   await ensurePreviewColumns(database);
 
-  const catalogMatch = url.pathname.match(/^\/tabelas?\/([^/]+)(?:\/(?:todos|compartilhar))?$/i);
+  const catalogMatch = url.pathname.match(/^\/tabelas?\/([^/]+)(?:\/([^/]+))?\/?$/i);
   if (catalogMatch) {
     const catalogSlug = catalogMatch[1].toLowerCase() === "masterplan-business" ? "felipe-demo" : catalogMatch[1];
-    const catalog = await database.prepare("SELECT name, publicName, catalogPeriod, logoUrl FROM organizations WHERE slug = ? LIMIT 1").bind(catalogSlug).first<PreviewCatalog>();
+    const catalog = await database.prepare("SELECT id, name, publicName, catalogPeriod, logoUrl FROM organizations WHERE slug = ? LIMIT 1").bind(catalogSlug).first<PreviewCatalog>();
     if (catalog) {
       const catalogName = catalog.publicName || catalog.name;
       const period = catalog.catalogPeriod ? ` — ${catalog.catalogPeriod}` : "";
       const image = catalog.logoUrl ? new URL(catalog.logoUrl, url.origin).toString() : undefined;
+      const routeProfile = catalogMatch[2] && !["todos", "compartilhar"].includes(catalogMatch[2].toLowerCase()) ? catalogMatch[2] : "";
+      if (routeProfile) {
+        const profiles = await database.prepare("SELECT name FROM responsibleProfiles WHERE organizationId = ? ORDER BY name").bind(catalog.id).all<{ name: string }>();
+        const profile = (profiles.results || []).find(item => profileSlug(item.name) === routeProfile.toLowerCase());
+        const profileName = profile?.name || routeProfile.replace(/-/g, " ").replace(/\b\w/g, character => character.toUpperCase());
+        const title = `Tabela de imóveis - ${profileName} | ${catalogName}`;
+        return {
+          title,
+          description: `${title}. Confira os imóveis disponíveis e entre em contato pelo WhatsApp.`,
+          image,
+        };
+      }
       return {
         title: `${catalogName} | Tabela de imóveis`,
         description: `Consulte os imóveis disponíveis da ${catalogName}${period}. Veja fotos, valores e informações para encontrar o imóvel ideal.`,
