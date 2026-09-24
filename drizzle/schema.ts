@@ -107,6 +107,7 @@ export const properties = sqliteTable("properties", {
   details: text("details").notNull(),
   price: text("price"),
   commission: text("commission"),
+  paymentConditions: text("paymentConditions"),
   notes: text("notes"),
   photos: text("photos").notNull(),
   coverPhoto: text("coverPhoto"),
