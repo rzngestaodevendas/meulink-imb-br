@@ -38,7 +38,7 @@ export default function PublicProperty() {
   const mapLink = property.mapUrl || (property.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.address)}` : "");
   const mapEmbedUrl = property.address ? `https://www.google.com/maps?q=${encodeURIComponent(property.address)}&output=embed` : "";
   async function shareProperty() {
-    const shareData = { title: property.title, text: `Confira este imóvel: ${property.title}`, url: window.location.href };
+    const shareData = { url: window.location.href };
     if (navigator.share) {
       await navigator.share(shareData).catch(() => undefined);
       return;
