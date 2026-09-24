@@ -9,10 +9,14 @@ import { registerOAuthRoutes } from "../server/_core/oauth";
 
 
 type PreviewProperty = {
+  organizationId?: number;
+  organizationName?: string | null;
+  organizationPublicName?: string | null;
   title: string;
   address: string | null;
   photos: string;
   coverPhoto?: string | null;
+  brokerName?: string | null;
 };
 
 type PreviewCatalog = {
@@ -80,17 +84,20 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
   }
 
   let property: PreviewProperty | null = null;
-  const codeMatch = url.pathname.match(/^\/(?:imovel|corretor\/[^/]+\/imovel|corretora\/[^/]+\/imovel)\/(ML-\d+)$/i);
+  let sharedBrokerName = "";
+  const codeMatch = url.pathname.match(/^\/(?:imovel|((?:corretor|corretora)\/([^/]+))\/imovel)\/(ML-\d+)$/i);
   const token = url.searchParams.get("link");
   if (token) {
-    const result = await database.prepare("SELECT p.title, p.address, p.photos, p.coverPhoto FROM shareLinks s INNER JOIN properties p ON p.id = s.propertyId WHERE s.token = ? AND s.enabled = 1 AND p.publicEnabled = 1 AND p.status = 'available' LIMIT 1").bind(token).first<PreviewProperty>();
+    const result = await database.prepare("SELECT s.brokerName, p.organizationId, o.name AS organizationName, o.publicName AS organizationPublicName, p.title, p.address, p.photos, p.coverPhoto FROM shareLinks s INNER JOIN properties p ON p.id = s.propertyId INNER JOIN organizations o ON o.id = p.organizationId WHERE s.token = ? AND s.enabled = 1 AND p.publicEnabled = 1 AND p.status = 'available' LIMIT 1").bind(token).first<PreviewProperty>();
     property = result || null;
+    sharedBrokerName = result?.brokerName || "";
   }
   if (!property && codeMatch) {
-    const id = Number(codeMatch[1].slice(3));
+    const id = Number(codeMatch[3].slice(3));
     if (Number.isInteger(id) && id > 0) {
-      const result = await database.prepare("SELECT title, address, photos, coverPhoto FROM properties WHERE id = ? AND publicEnabled = 1 AND status = 'available' LIMIT 1").bind(id).first<PreviewProperty>();
+      const result = await database.prepare("SELECT p.organizationId, o.name AS organizationName, o.publicName AS organizationPublicName, p.title, p.address, p.photos, p.coverPhoto FROM properties p INNER JOIN organizations o ON o.id = p.organizationId WHERE p.id = ? AND p.publicEnabled = 1 AND p.status = 'available' LIMIT 1").bind(id).first<PreviewProperty>();
       property = result || null;
+      sharedBrokerName = codeMatch[2] ? codeMatch[2].replace(/-/g, " ").replace(/\b\w/g, character => character.toUpperCase()) : "";
     }
   }
   if (!property) return null;
@@ -104,8 +111,9 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
     image = undefined;
   }
 
-  const title = `MeuLink Imóveis | ${property.title}`;
-  const description = `Veja fotos, características e localização de ${property.title}${property.address ? ` em ${property.address}` : ""}. Fale com o corretor e agende uma visita.`;
+  const organizationName = property.organizationPublicName || property.organizationName || "";
+  const title = sharedBrokerName && organizationName ? `Tabela de imóveis - ${sharedBrokerName} | ${organizationName}` : `MeuLink Imóveis | ${property.title}`;
+  const description = sharedBrokerName && organizationName ? `${title}. Confira ${property.title}${property.address ? ` em ${property.address}` : ""} e entre em contato pelo WhatsApp.` : `Veja fotos, características e localização de ${property.title}${property.address ? ` em ${property.address}` : ""}. Fale com o corretor e agende uma visita.`;
   return { title, description, image };
 }
 
