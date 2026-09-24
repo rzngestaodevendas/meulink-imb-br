@@ -4,7 +4,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import AdminLogin from "@/pages/AdminLogin";
 import { Button } from "./ui/button";
-import { Building2, ClipboardList, Factory, LogOut, PanelTop, Plus, UserCog, Users } from "lucide-react";
+import { Building2, ClipboardList, Factory, LogOut, PanelTop, Plus, ShieldCheck, UserCog, Users } from "lucide-react";
 import { useLocation } from "wouter";
 
 const menuItems = [
@@ -15,10 +15,15 @@ const menuItems = [
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { loading, user } = useAuth();
+  const { loading, user, logout } = useAuth();
   if (loading) return <DashboardLayoutSkeleton />;
   if (!user) return <AdminLogin />;
+  if (user.role !== "admin") return <PanelAccessDenied onLogout={() => void logout()} />;
   return <DashboardLayoutContent>{children}</DashboardLayoutContent>;
+}
+
+function PanelAccessDenied({ onLogout }: { onLogout: () => void }) {
+  return <div className="grid min-h-screen place-items-center bg-[#f7f8fa] p-5"><div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-xl"><div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[#102c3d] text-[#d7b874]"><ShieldCheck className="h-7 w-7" /></div><h1 className="mt-5 text-xl font-semibold text-[#102c3d]">Acesso restrito</h1><p className="mt-2 text-sm leading-6 text-slate-500">Este painel é exclusivo do administrador. O acesso do corretor deve ser feito pela página pública da tabela.</p><Button type="button" onClick={onLogout} className="mt-6 w-full gap-2 bg-[#102c3d] hover:bg-[#173e53]"><LogOut className="h-4 w-4" /> Sair desta conta</Button></div></div>;
 }
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
