@@ -63,7 +63,7 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
         const profiles = await database.prepare("SELECT name FROM responsibleProfiles WHERE organizationId = ? ORDER BY name").bind(catalog.id).all<{ name: string }>();
         const profile = (profiles.results || []).find(item => profileSlug(item.name) === routeProfile.toLowerCase());
         const profileName = profile?.name || routeProfile.replace(/-/g, " ").replace(/\b\w/g, character => character.toUpperCase());
-        const title = `Tabela de imóveis - ${profileName} | ${catalogName}`;
+        const title = `Tabela de imóveis - ${profileName} | ${catalog.name}`;
         return {
           title,
           description: `${title}. Confira os imóveis disponíveis e entre em contato pelo WhatsApp.`,
