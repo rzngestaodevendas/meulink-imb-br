@@ -51,6 +51,25 @@ export const teamRoleSchema = z.enum(["company_admin", "broker"]);
 export const inviteInput = z.object({ email: z.string().trim().email().max(320), role: teamRoleSchema });
 export const auditActionSchema = z.enum(["organization.created", "organization.selected", "organization.properties_linked", "property.created", "property.bulk_created", "property.updated", "property.archived", "property.deleted_permanently", "share_link.created", "team.invite_created", "team.invite_revoked", "team.invite_accepted", "team.role_updated", "team.member_removed"]);
 
+async function validatePublicLinks(values: Array<string | null | undefined>, label: string) {
+  const links = values.filter((value): value is string => typeof value === "string" && value.length > 0 && !value.startsWith("/"));
+  for (const value of links) {
+    let url: URL;
+    try {
+      url = new URL(value);
+    } catch {
+      throw new TRPCError({ code: "BAD_REQUEST", message: `${label}: informe uma URL válida.` });
+    }
+    if (url.protocol !== "https:") throw new TRPCError({ code: "BAD_REQUEST", message: `${label}: use um link HTTPS público.` });
+    try {
+      const response = await fetch(url, { method: "HEAD", redirect: "follow" });
+      if (!response.ok && response.status !== 405) throw new Error(`HTTP ${response.status}`);
+    } catch {
+      throw new TRPCError({ code: "BAD_REQUEST", message: `${label}: o link não está acessível publicamente (${value}).` });
+    }
+  }
+}
+
 function parseProperty(row: typeof properties.$inferSelect, includeInternal = true) {
   const legacyPhotos = JSON.parse(row.photos || "[]") as string[];
   const storedPropertyPhotos = JSON.parse(row.propertyPhotos || "[]") as string[];
@@ -200,11 +219,13 @@ export const appRouter = router({
     }),
     create: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(240), description: z.string().max(10000).default(""), photos: z.array(z.string().trim().min(1).max(1000)).max(60).default([]), details: z.array(z.string().trim().min(1).max(240)).max(60).default([]), mapUrl: z.string().trim().url().or(z.literal("")).default(""), mapDriveUrl: z.string().trim().url().or(z.literal("")).default(""), photosDriveUrl: z.string().trim().url().or(z.literal("")).default(""), videosDriveUrl: z.string().trim().url().or(z.literal("")).default("") })).mutation(async ({ ctx, input }) => {
       await ensureDevelopmentsTable(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); const scope = await requireCompanyAdmin(ctx);
+      await validatePublicLinks([input.mapUrl, input.mapDriveUrl, input.photosDriveUrl, input.videosDriveUrl, ...input.photos], "Links do empreendimento");
       const [row] = await db.insert(developments).values({ organizationId: scope.organizationId, name: input.name, description: input.description, photos: JSON.stringify(input.photos), details: JSON.stringify(input.details), mapUrl: input.mapUrl || null, mapDriveUrl: input.mapDriveUrl || null, photosDriveUrl: input.photosDriveUrl || null, videosDriveUrl: input.videosDriveUrl || null }).returning();
       return { ...row, photos: input.photos, details: input.details };
     }),
     update: protectedProcedure.input(z.object({ id: z.number().int().positive(), data: z.object({ name: z.string().trim().min(2).max(240), description: z.string().max(10000).default(""), photos: z.array(z.string().trim().min(1).max(1000)).max(60).default([]), details: z.array(z.string().trim().min(1).max(240)).max(60).default([]), mapUrl: z.string().trim().url().or(z.literal("")).default(""), mapDriveUrl: z.string().trim().url().or(z.literal("")).default(""), photosDriveUrl: z.string().trim().url().or(z.literal("")).default(""), videosDriveUrl: z.string().trim().url().or(z.literal("")).default("") }) })).mutation(async ({ ctx, input }) => {
       await ensureDevelopmentsTable(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); const scope = await requireCompanyAdmin(ctx);
+      await validatePublicLinks([input.data.mapUrl, input.data.mapDriveUrl, input.data.photosDriveUrl, input.data.videosDriveUrl, ...input.data.photos], "Links do empreendimento");
       const [existing] = await db.select().from(developments).where(and(eq(developments.id, input.id), eq(developments.organizationId, scope.organizationId))).limit(1); if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Empreendimento não encontrado." });
       await db.update(developments).set({ name: input.data.name, description: input.data.description, photos: JSON.stringify(input.data.photos), details: JSON.stringify(input.data.details), mapUrl: input.data.mapUrl || null, mapDriveUrl: input.data.mapDriveUrl || null, photosDriveUrl: input.data.photosDriveUrl || null, videosDriveUrl: input.data.videosDriveUrl || null }).where(eq(developments.id, input.id));
       await db.update(properties).set({ developmentName: input.data.name, developmentInfo: input.data.description, developmentPhotos: JSON.stringify(input.data.photos), details: JSON.stringify(input.data.details), mapUrl: input.data.mapUrl || null, mapDriveUrl: input.data.mapDriveUrl || null, photosDriveUrl: input.data.photosDriveUrl || null, videosDriveUrl: input.data.videosDriveUrl || null }).where(and(eq(properties.organizationId, scope.organizationId), eq(properties.developmentId, input.id)));
@@ -484,6 +505,7 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const scope = await requireCompanyAdmin(ctx);
+      await validatePublicLinks([input.mapUrl, input.mapDriveUrl, input.photosDriveUrl, input.videosDriveUrl, ...input.photos, ...input.propertyPhotos, ...input.developmentPhotos], "Links do imóvel");
       const baseSlug = input.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 150) || `imovel-${nanoid(8)}`;
       const slug = `${baseSlug}-${nanoid(5).toLowerCase()}`;
       await db.insert(properties).values({ organizationId: scope.organizationId, developmentId: input.developmentId ?? null, slug, title: input.title, address: input.address, developmentName: input.developmentName, propertyType: input.propertyType, garageSpaces: input.garageSpaces ?? null, unitNumber: input.unitNumber || null, bedrooms: input.bedrooms ?? null, suites: input.suites ?? null, bathrooms: input.bathrooms ?? null, privateArea: input.privateArea || null, keys: input.keys || null, developmentInfo: input.developmentInfo || null, mapUrl: input.mapUrl || null, responsibleName: input.responsibleName, responsiblePhone: input.responsiblePhone, details: JSON.stringify(input.details), price: input.price, commission: input.commission, paymentConditions: input.paymentConditions, notes: input.notes, photos: JSON.stringify([input.coverPhoto || input.photos[0] || "", ...(input.propertyPhotos?.length ? input.propertyPhotos : input.photos.slice(1))].filter(Boolean)), coverPhoto: input.coverPhoto || input.photos[0] || null, propertyPhotos: JSON.stringify(input.propertyPhotos?.length ? input.propertyPhotos : input.photos.slice(1)), developmentPhotos: JSON.stringify(input.developmentPhotos || []), mapDriveUrl: input.mapDriveUrl || null, photosDriveUrl: input.photosDriveUrl || null, videosDriveUrl: input.videosDriveUrl || null, status: input.status, publicEnabled: input.publicEnabled ? 1 : 0 });
@@ -512,6 +534,7 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const scope = await requireCompanyAdmin(ctx);
+      await validatePublicLinks([input.data.mapUrl, input.data.mapDriveUrl, input.data.photosDriveUrl, input.data.videosDriveUrl, ...input.data.photos, ...input.data.propertyPhotos, ...input.data.developmentPhotos], "Links do imóvel");
       const [existing] = await db.select().from(properties).where(eq(properties.id, input.id)).limit(1);
       if (!existing || !(await propertyBelongsToOrganization(db, scope.organizationId, input.id))) throw new TRPCError({ code: "NOT_FOUND", message: "Imóvel não encontrado nesta tabela." });
       await db.update(properties).set({ developmentId: input.data.developmentId ?? null, title: input.data.title, address: input.data.address, developmentName: input.data.developmentName, propertyType: input.data.propertyType, garageSpaces: input.data.garageSpaces ?? null, unitNumber: input.data.unitNumber || null, bedrooms: input.data.bedrooms ?? null, suites: input.data.suites ?? null, bathrooms: input.data.bathrooms ?? null, privateArea: input.data.privateArea || null, keys: input.data.keys || null, developmentInfo: input.data.developmentInfo || null, mapUrl: input.data.mapUrl || null, responsibleName: input.data.responsibleName, responsiblePhone: input.data.responsiblePhone, details: JSON.stringify(input.data.details), price: input.data.price, commission: input.data.commission, paymentConditions: input.data.paymentConditions, notes: input.data.notes, photos: JSON.stringify([input.data.coverPhoto || input.data.photos[0] || "", ...(input.data.propertyPhotos?.length ? input.data.propertyPhotos : input.data.photos.slice(1))].filter(Boolean)), coverPhoto: input.data.coverPhoto || input.data.photos[0] || null, propertyPhotos: JSON.stringify(input.data.propertyPhotos?.length ? input.data.propertyPhotos : input.data.photos.slice(1)), developmentPhotos: JSON.stringify(input.data.developmentPhotos || []), mapDriveUrl: input.data.mapDriveUrl || null, photosDriveUrl: input.data.photosDriveUrl || null, videosDriveUrl: input.data.videosDriveUrl || null, status: input.data.status, publicEnabled: input.data.publicEnabled ? 1 : 0 }).where(eq(properties.id, input.id));
