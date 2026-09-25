@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { auditLogs, organizationInvites, organizationMembers, organizationProperties, organizations, properties, responsibleProfiles, shareLinks, users } from "../drizzle/schema";
-import { ensureBrokerProfileColumns, ensureOrganizationColumns, ensureOrganizationPropertiesTable, ensurePasswordColumn, ensurePropertyPrivateColumns, ensureResponsibleProfilesTable, ensureShareLinkColumns, getAuditLogs, getDb, getOrganizationForUser, getPhotosBucket, getUserByEmail, writeAuditLog } from "./db";
+import { auditLogs, developments, organizationInvites, organizationMembers, organizationProperties, organizations, properties, responsibleProfiles, shareLinks, users } from "../drizzle/schema";
+import { ensureBrokerProfileColumns, ensureDevelopmentsTable, ensureOrganizationColumns, ensureOrganizationPropertiesTable, ensurePasswordColumn, ensurePropertyPrivateColumns, ensureResponsibleProfilesTable, ensureShareLinkColumns, getAuditLogs, getDb, getOrganizationForUser, getPhotosBucket, getUserByEmail, writeAuditLog } from "./db";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
 import { COOKIE_NAME } from "@shared/const";
@@ -15,6 +15,7 @@ import { ENV } from "./_core/env";
 const propertyInput = z.object({ search: z.string().trim().optional() });
 const statusSchema = z.enum(["available", "reserved", "sold", "unavailable", "updating", "hidden"]);
 export const propertyPayload = z.object({
+  developmentId: z.number().int().positive().nullable().optional().default(null),
   title: z.string().trim().min(2).max(240),
   address: z.string().trim().max(2000).optional().default(""),
   developmentName: z.string().trim().max(240).optional().default(""),
@@ -57,6 +58,7 @@ function parseProperty(row: typeof properties.$inferSelect, includeInternal = tr
     id: row.id,
     code: `ML-${String(row.id).padStart(6, "0")}`,
     slug: row.slug,
+    developmentId: row.developmentId,
     title: row.title,
     address: row.address,
     developmentName: row.developmentName,
@@ -180,6 +182,33 @@ export const appRouter = router({
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
+    }),
+  }),
+
+  developments: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      await ensureDevelopmentsTable();
+      const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+      const scope = await requireCompanyAdmin(ctx);
+      const rows = await db.select().from(developments).where(eq(developments.organizationId, scope.organizationId)).orderBy(developments.name);
+      return rows.map(row => ({ ...row, photos: JSON.parse(row.photos || "[]") as string[], details: JSON.parse(row.details || "[]") as string[] }));
+    }),
+    create: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(240), description: z.string().max(10000).default(""), photos: z.array(z.string().trim().min(1).max(1000)).max(60).default([]), details: z.array(z.string().trim().min(1).max(240)).max(60).default([]), mapUrl: z.string().trim().url().or(z.literal("")).default(""), mapDriveUrl: z.string().trim().url().or(z.literal("")).default(""), photosDriveUrl: z.string().trim().url().or(z.literal("")).default(""), videosDriveUrl: z.string().trim().url().or(z.literal("")).default("") })).mutation(async ({ ctx, input }) => {
+      await ensureDevelopmentsTable(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); const scope = await requireCompanyAdmin(ctx);
+      const [row] = await db.insert(developments).values({ organizationId: scope.organizationId, name: input.name, description: input.description, photos: JSON.stringify(input.photos), details: JSON.stringify(input.details), mapUrl: input.mapUrl || null, mapDriveUrl: input.mapDriveUrl || null, photosDriveUrl: input.photosDriveUrl || null, videosDriveUrl: input.videosDriveUrl || null }).returning();
+      return { ...row, photos: input.photos, details: input.details };
+    }),
+    update: protectedProcedure.input(z.object({ id: z.number().int().positive(), data: z.object({ name: z.string().trim().min(2).max(240), description: z.string().max(10000).default(""), photos: z.array(z.string().trim().min(1).max(1000)).max(60).default([]), details: z.array(z.string().trim().min(1).max(240)).max(60).default([]), mapUrl: z.string().trim().url().or(z.literal("")).default(""), mapDriveUrl: z.string().trim().url().or(z.literal("")).default(""), photosDriveUrl: z.string().trim().url().or(z.literal("")).default(""), videosDriveUrl: z.string().trim().url().or(z.literal("")).default("") }) })).mutation(async ({ ctx, input }) => {
+      await ensureDevelopmentsTable(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); const scope = await requireCompanyAdmin(ctx);
+      const [existing] = await db.select().from(developments).where(and(eq(developments.id, input.id), eq(developments.organizationId, scope.organizationId))).limit(1); if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Empreendimento não encontrado." });
+      await db.update(developments).set({ name: input.data.name, description: input.data.description, photos: JSON.stringify(input.data.photos), details: JSON.stringify(input.data.details), mapUrl: input.data.mapUrl || null, mapDriveUrl: input.data.mapDriveUrl || null, photosDriveUrl: input.data.photosDriveUrl || null, videosDriveUrl: input.data.videosDriveUrl || null }).where(eq(developments.id, input.id));
+      await db.update(properties).set({ developmentName: input.data.name, developmentInfo: input.data.description, developmentPhotos: JSON.stringify(input.data.photos), details: JSON.stringify(input.data.details), mapUrl: input.data.mapUrl || null, mapDriveUrl: input.data.mapDriveUrl || null, photosDriveUrl: input.data.photosDriveUrl || null, videosDriveUrl: input.data.videosDriveUrl || null }).where(and(eq(properties.organizationId, scope.organizationId), eq(properties.developmentId, input.id)));
+      return { success: true as const };
+    }),
+    delete: protectedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      await ensureDevelopmentsTable(); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" }); const scope = await requireCompanyAdmin(ctx);
+      const [existing] = await db.select({ id: developments.id }).from(developments).where(and(eq(developments.id, input.id), eq(developments.organizationId, scope.organizationId))).limit(1); if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Empreendimento não encontrado." });
+      await db.update(properties).set({ developmentId: null }).where(and(eq(properties.organizationId, scope.organizationId), eq(properties.developmentId, input.id))); await db.delete(developments).where(eq(developments.id, input.id)); return { success: true as const };
     }),
   }),
 
@@ -458,7 +487,7 @@ export const appRouter = router({
       const scope = await requireCompanyAdmin(ctx);
       const baseSlug = input.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 150) || `imovel-${nanoid(8)}`;
       const slug = `${baseSlug}-${nanoid(5).toLowerCase()}`;
-      await db.insert(properties).values({ organizationId: scope.organizationId, slug, title: input.title, address: input.address, developmentName: input.developmentName, propertyType: input.propertyType, garageSpaces: input.garageSpaces ?? null, unitNumber: input.unitNumber || null, bedrooms: input.bedrooms ?? null, suites: input.suites ?? null, bathrooms: input.bathrooms ?? null, privateArea: input.privateArea || null, keys: input.keys || null, developmentInfo: input.developmentInfo || null, mapUrl: input.mapUrl || null, responsibleName: input.responsibleName, responsiblePhone: input.responsiblePhone, details: JSON.stringify(input.details), price: input.price, commission: input.commission, paymentConditions: input.paymentConditions, notes: input.notes, photos: JSON.stringify([input.coverPhoto || input.photos[0] || "", ...(input.propertyPhotos?.length ? input.propertyPhotos : input.photos.slice(1))].filter(Boolean)), coverPhoto: input.coverPhoto || input.photos[0] || null, propertyPhotos: JSON.stringify(input.propertyPhotos?.length ? input.propertyPhotos : input.photos.slice(1)), developmentPhotos: JSON.stringify(input.developmentPhotos || []), mapDriveUrl: input.mapDriveUrl || null, photosDriveUrl: input.photosDriveUrl || null, videosDriveUrl: input.videosDriveUrl || null, status: input.status, publicEnabled: input.publicEnabled ? 1 : 0 });
+      await db.insert(properties).values({ organizationId: scope.organizationId, developmentId: input.developmentId ?? null, slug, title: input.title, address: input.address, developmentName: input.developmentName, propertyType: input.propertyType, garageSpaces: input.garageSpaces ?? null, unitNumber: input.unitNumber || null, bedrooms: input.bedrooms ?? null, suites: input.suites ?? null, bathrooms: input.bathrooms ?? null, privateArea: input.privateArea || null, keys: input.keys || null, developmentInfo: input.developmentInfo || null, mapUrl: input.mapUrl || null, responsibleName: input.responsibleName, responsiblePhone: input.responsiblePhone, details: JSON.stringify(input.details), price: input.price, commission: input.commission, paymentConditions: input.paymentConditions, notes: input.notes, photos: JSON.stringify([input.coverPhoto || input.photos[0] || "", ...(input.propertyPhotos?.length ? input.propertyPhotos : input.photos.slice(1))].filter(Boolean)), coverPhoto: input.coverPhoto || input.photos[0] || null, propertyPhotos: JSON.stringify(input.propertyPhotos?.length ? input.propertyPhotos : input.photos.slice(1)), developmentPhotos: JSON.stringify(input.developmentPhotos || []), mapDriveUrl: input.mapDriveUrl || null, photosDriveUrl: input.photosDriveUrl || null, videosDriveUrl: input.videosDriveUrl || null, status: input.status, publicEnabled: input.publicEnabled ? 1 : 0 });
       const [created] = await db.select().from(properties).where(and(eq(properties.organizationId, scope.organizationId), eq(properties.slug, slug))).limit(1);
       if (!created) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível carregar o imóvel criado." });
       await recordAudit(ctx, scope.organizationId, "property.created", "property", created.id, { title: created.title });
@@ -486,7 +515,7 @@ export const appRouter = router({
       const scope = await requireCompanyAdmin(ctx);
       const [existing] = await db.select().from(properties).where(eq(properties.id, input.id)).limit(1);
       if (!existing || !(await propertyBelongsToOrganization(db, scope.organizationId, input.id))) throw new TRPCError({ code: "NOT_FOUND", message: "Imóvel não encontrado nesta tabela." });
-      await db.update(properties).set({ title: input.data.title, address: input.data.address, developmentName: input.data.developmentName, propertyType: input.data.propertyType, garageSpaces: input.data.garageSpaces ?? null, unitNumber: input.data.unitNumber || null, bedrooms: input.data.bedrooms ?? null, suites: input.data.suites ?? null, bathrooms: input.data.bathrooms ?? null, privateArea: input.data.privateArea || null, keys: input.data.keys || null, developmentInfo: input.data.developmentInfo || null, mapUrl: input.data.mapUrl || null, responsibleName: input.data.responsibleName, responsiblePhone: input.data.responsiblePhone, details: JSON.stringify(input.data.details), price: input.data.price, commission: input.data.commission, paymentConditions: input.data.paymentConditions, notes: input.data.notes, photos: JSON.stringify([input.data.coverPhoto || input.data.photos[0] || "", ...(input.data.propertyPhotos?.length ? input.data.propertyPhotos : input.data.photos.slice(1))].filter(Boolean)), coverPhoto: input.data.coverPhoto || input.data.photos[0] || null, propertyPhotos: JSON.stringify(input.data.propertyPhotos?.length ? input.data.propertyPhotos : input.data.photos.slice(1)), developmentPhotos: JSON.stringify(input.data.developmentPhotos || []), mapDriveUrl: input.data.mapDriveUrl || null, photosDriveUrl: input.data.photosDriveUrl || null, videosDriveUrl: input.data.videosDriveUrl || null, status: input.data.status, publicEnabled: input.data.publicEnabled ? 1 : 0 }).where(eq(properties.id, input.id));
+      await db.update(properties).set({ developmentId: input.data.developmentId ?? null, title: input.data.title, address: input.data.address, developmentName: input.data.developmentName, propertyType: input.data.propertyType, garageSpaces: input.data.garageSpaces ?? null, unitNumber: input.data.unitNumber || null, bedrooms: input.data.bedrooms ?? null, suites: input.data.suites ?? null, bathrooms: input.data.bathrooms ?? null, privateArea: input.data.privateArea || null, keys: input.data.keys || null, developmentInfo: input.data.developmentInfo || null, mapUrl: input.data.mapUrl || null, responsibleName: input.data.responsibleName, responsiblePhone: input.data.responsiblePhone, details: JSON.stringify(input.data.details), price: input.data.price, commission: input.data.commission, paymentConditions: input.data.paymentConditions, notes: input.data.notes, photos: JSON.stringify([input.data.coverPhoto || input.data.photos[0] || "", ...(input.data.propertyPhotos?.length ? input.data.propertyPhotos : input.data.photos.slice(1))].filter(Boolean)), coverPhoto: input.data.coverPhoto || input.data.photos[0] || null, propertyPhotos: JSON.stringify(input.data.propertyPhotos?.length ? input.data.propertyPhotos : input.data.photos.slice(1)), developmentPhotos: JSON.stringify(input.data.developmentPhotos || []), mapDriveUrl: input.data.mapDriveUrl || null, photosDriveUrl: input.data.photosDriveUrl || null, videosDriveUrl: input.data.videosDriveUrl || null, status: input.data.status, publicEnabled: input.data.publicEnabled ? 1 : 0 }).where(eq(properties.id, input.id));
       const [updated] = await db.select().from(properties).where(eq(properties.id, input.id)).limit(1);
       await recordAudit(ctx, scope.organizationId, "property.updated", "property", input.id, { title: input.data.title, status: input.data.status });
       return parseProperty(updated!);

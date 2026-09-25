@@ -13,6 +13,7 @@ let _shareLinkColumnsReady = false;
 let _responsibleProfilesReady = false;
 let _propertyPrivateColumnsReady = false;
 let _organizationPropertiesReady = false;
+let _developmentsReady = false;
 
 function getD1Binding(): D1DatabaseLike | undefined {
   return (globalThis as typeof globalThis & { __MEULINK_D1?: D1DatabaseLike }).__MEULINK_D1;
@@ -107,6 +108,16 @@ export async function ensureOrganizationPropertiesTable() {
   await binding.prepare("CREATE INDEX IF NOT EXISTS organization_property_organization_idx ON organizationProperties (organizationId)").run();
   await binding.prepare("CREATE INDEX IF NOT EXISTS organization_property_property_idx ON organizationProperties (propertyId)").run();
   _organizationPropertiesReady = true;
+}
+
+export async function ensureDevelopmentsTable() {
+  if (_developmentsReady) return;
+  const binding = getD1Binding();
+  if (!binding) throw new Error("Database is not available");
+  await binding.prepare("CREATE TABLE IF NOT EXISTS developments (id INTEGER PRIMARY KEY AUTOINCREMENT, organizationId INTEGER NOT NULL, name TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', photos TEXT NOT NULL DEFAULT '[]', details TEXT NOT NULL DEFAULT '[]', mapUrl TEXT, mapDriveUrl TEXT, photosDriveUrl TEXT, videosDriveUrl TEXT, createdAt INTEGER, updatedAt INTEGER)").run();
+  await binding.prepare("CREATE INDEX IF NOT EXISTS development_organization_idx ON developments (organizationId)").run();
+  await binding.prepare("ALTER TABLE properties ADD COLUMN developmentId INTEGER").run().catch(() => undefined);
+  _developmentsReady = true;
 }
 
 export async function ensurePropertyPrivateColumns() {

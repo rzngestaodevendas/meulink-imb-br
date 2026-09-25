@@ -96,9 +96,27 @@ export const auditLogs = sqliteTable("auditLogs", {
   createdIndex: index("audit_log_created_idx").on(table.createdAt),
 }));
 
+export const developments = sqliteTable("developments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  organizationId: integer("organizationId").notNull(),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  photos: text("photos").notNull().default("[]"),
+  details: text("details").notNull().default("[]"),
+  mapUrl: text("mapUrl"),
+  mapDriveUrl: text("mapDriveUrl"),
+  photosDriveUrl: text("photosDriveUrl"),
+  videosDriveUrl: text("videosDriveUrl"),
+  createdAt: timestamp("createdAt"),
+  updatedAt: timestamp("updatedAt"),
+}, table => ({
+  organizationIndex: index("development_organization_idx").on(table.organizationId),
+}));
+
 export const properties = sqliteTable("properties", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   organizationId: integer("organizationId").notNull(),
+  developmentId: integer("developmentId"),
   slug: text("slug").notNull(),
   title: text("title").notNull(),
   address: text("address"),

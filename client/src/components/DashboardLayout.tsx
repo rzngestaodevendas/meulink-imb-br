@@ -4,11 +4,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import AdminLogin from "@/pages/AdminLogin";
 import { Button } from "./ui/button";
-import { Building2, ClipboardList, Factory, LogOut, PanelTop, Plus, ShieldCheck, UserCog, Users } from "lucide-react";
+import { Building2, ClipboardList, Factory, LogOut, PanelTop, Plus, ShieldCheck, UserCog, Users, Landmark } from "lucide-react";
 import { useLocation } from "wouter";
 
 const menuItems = [
   { icon: Factory, label: "Tabelas", path: "/painelgestao/construtoras" },
+  { icon: Landmark, label: "Empreendimentos", path: "/painelgestao/empreendimentos" },
   { icon: Users, label: "Equipe", path: "/painelgestao/equipe" },
   { icon: ClipboardList, label: "Auditoria", path: "/painelgestao/auditoria" },
   { icon: UserCog, label: "Usuários", path: "/painelgestao/usuarios", adminOnly: true },

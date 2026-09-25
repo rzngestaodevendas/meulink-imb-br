@@ -13,11 +13,14 @@ import Organizations from "./pages/Organizations";
 import OrganizationDetail from "./pages/OrganizationDetail";
 import BrokerPortal from "./pages/BrokerPortal";
 import PublicCatalog from "./pages/PublicCatalog";
+import Developments from "./pages/Developments";
 import AdminUsers from "./pages/AdminUsers";
 
 function ProtectedApp() {
   return <DashboardLayout><Organizations /></DashboardLayout>;
 }
+
+function ProtectedDevelopments() { return <DashboardLayout><Developments /></DashboardLayout>; }
 
 function ProtectedProperties() {
   return <DashboardLayout><ManageProperties /></DashboardLayout>;
@@ -65,6 +68,7 @@ function Router() {
       <Route path="/tabela/:slug" component={PublicTableEntry} />
       <Route path="/painelgestao" component={ProtectedApp} />
       <Route path="/painelgestao/imoveis" component={ProtectedProperties} />
+      <Route path="/painelgestao/empreendimentos" component={ProtectedDevelopments} />
       <Route path="/painelgestao/equipe" component={ProtectedTeam} />
       <Route path="/painelgestao/auditoria" component={ProtectedAuditLog} />
       <Route path="/painelgestao/construtoras" component={ProtectedOrganizations} />
@@ -72,6 +76,7 @@ function Router() {
       <Route path="/painelgestao/usuarios" component={ProtectedAdminUsers} />
       <Route path="/app" component={ProtectedApp} />
       <Route path="/app/imoveis" component={ProtectedProperties} />
+      <Route path="/app/empreendimentos" component={ProtectedDevelopments} />
       <Route path="/app/equipe" component={ProtectedTeam} />
       <Route path="/app/auditoria" component={ProtectedAuditLog} />
       <Route path="/app/construtoras" component={ProtectedOrganizations} />
