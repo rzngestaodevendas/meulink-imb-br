@@ -20,6 +20,12 @@ export default function PublicProperty() {
   const [lightboxGallery, setLightboxGallery] = useState<"property" | "development">("property");
   const [zoom, setZoom] = useState(1);
   const [shareCopied, setShareCopied] = useState(false);
+  const autoplayDevelopmentPhotos = activeQuery.data?.property.developmentPhotos || [];
+  useEffect(() => {
+    if (autoplayDevelopmentPhotos.length <= 1) return;
+    const timer = window.setInterval(() => setDevelopmentPhotoIndex(index => (index + 1) % autoplayDevelopmentPhotos.length), 5000);
+    return () => window.clearInterval(timer);
+  }, [autoplayDevelopmentPhotos.length]);
 
   if (!token && !code) return <EmptyState title="Link de imóvel inválido" text="Solicite um novo link público do imóvel." />;
   if (activeQuery.isLoading) return <div className="grid min-h-screen place-items-center bg-[#f4f6f7] text-sm text-slate-500">Preparando sua visita...</div>;
@@ -37,11 +43,6 @@ export default function PublicProperty() {
   const lightboxPhotos = lightboxGallery === "development" ? developmentPhotos : galleryPhotos;
   const lightboxIndex = lightboxGallery === "development" ? developmentPhotoIndex : photoIndex;
   const lightboxPhoto = lightboxPhotos[lightboxIndex];
-  useEffect(() => {
-    if (developmentPhotos.length <= 1) return;
-    const timer = window.setInterval(() => setDevelopmentPhotoIndex(index => (index + 1) % developmentPhotos.length), 5000);
-    return () => window.clearInterval(timer);
-  }, [developmentPhotos.length]);
   const whatsapp = broker?.phone ? `https://wa.me/${broker.phone}?text=${encodeURIComponent(`Olá ${broker.name.split(/\s+/)[0]}, vi a página do imóvel "${property.title}" (${property.price || "valor sob consulta"}) e gostaria de mais informações e de agendar uma visita.`)}` : "";
   const region = property.address?.match(/Capão da Canoa|Xangri-Lá|Maquiné|Parobé|Osório|Tramandaí|Torres|Carlos Barbosa|Porto Belo/i)?.[0];
   const bedrooms = property.bedrooms != null ? String(property.bedrooms) : `${property.title} ${(property.details || []).join(" ")} ${property.notes || ""}`.match(/(\d+)\s*dorm/i)?.[1];
