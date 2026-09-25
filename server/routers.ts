@@ -290,10 +290,10 @@ export const appRouter = router({
       const currentIds = new Set(current.map(property => property.id));
       const search = input.search?.toLowerCase();
       const rows = await db.select().from(properties).orderBy(properties.title);
-      return rows.filter(property => !currentIds.has(property.id) && (!search || [property.title, property.address, property.developmentName, property.price].some(value => value?.toLowerCase().includes(search)))).map(property => parseProperty(property));
+      return rows.filter(property => !search || [property.title, property.address, property.developmentName, property.price].some(value => value?.toLowerCase().includes(search))).map(property => ({ ...parseProperty(property), alreadyLinked: currentIds.has(property.id) }));
     }),
 
-    linkProperties: protectedProcedure.input(z.object({ organizationId: z.number().int().positive(), propertyIds: z.array(z.number().int().positive()).min(1).max(200) })).mutation(async ({ ctx, input }) => {
+    linkProperties: protectedProcedure.input(z.object({ organizationId: z.number().int().positive(), propertyIds: z.array(z.number().int().positive()).min(1).max(200), responsibleName: z.string().trim().max(180).optional(), responsiblePhone: z.string().trim().max(32).optional() })).mutation(async ({ ctx, input }) => {
       await ensureOrganizationPropertiesTable();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
@@ -303,7 +303,7 @@ export const appRouter = router({
       }
       const rows = await db.select({ id: properties.id }).from(properties).where(inArray(properties.id, input.propertyIds));
       if (!rows.length) throw new TRPCError({ code: "NOT_FOUND", message: "Nenhum imóvel válido foi selecionado." });
-      await db.insert(organizationProperties).values(rows.map(row => ({ organizationId: input.organizationId, propertyId: row.id }))).onConflictDoNothing();
+      await db.insert(organizationProperties).values(rows.map(row => ({ organizationId: input.organizationId, propertyId: row.id, responsibleName: input.responsibleName || null, responsiblePhone: input.responsiblePhone || null }))).onConflictDoUpdate({ target: [organizationProperties.organizationId, organizationProperties.propertyId], set: { responsibleName: input.responsibleName || null, responsiblePhone: input.responsiblePhone || null } });
       await recordAudit(ctx, input.organizationId, "organization.properties_linked", "organization_properties", input.organizationId, { count: rows.length });
       return { count: rows.length };
     }),

@@ -107,6 +107,8 @@ export async function ensureOrganizationPropertiesTable() {
   await binding.prepare("CREATE TABLE IF NOT EXISTS organizationProperties (id INTEGER PRIMARY KEY AUTOINCREMENT, organizationId INTEGER NOT NULL, propertyId INTEGER NOT NULL, createdAt INTEGER, UNIQUE(organizationId, propertyId))").run();
   await binding.prepare("CREATE INDEX IF NOT EXISTS organization_property_organization_idx ON organizationProperties (organizationId)").run();
   await binding.prepare("CREATE INDEX IF NOT EXISTS organization_property_property_idx ON organizationProperties (propertyId)").run();
+  await binding.prepare("ALTER TABLE organizationProperties ADD COLUMN responsibleName TEXT").run().catch(() => undefined);
+  await binding.prepare("ALTER TABLE organizationProperties ADD COLUMN responsiblePhone TEXT").run().catch(() => undefined);
   _organizationPropertiesReady = true;
 }
 

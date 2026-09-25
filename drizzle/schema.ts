@@ -48,6 +48,8 @@ export const organizationProperties = sqliteTable("organizationProperties", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   organizationId: integer("organizationId").notNull(),
   propertyId: integer("propertyId").notNull(),
+  responsibleName: text("responsibleName"),
+  responsiblePhone: text("responsiblePhone"),
   createdAt: timestamp("createdAt"),
 }, table => ({
   organizationPropertyUnique: uniqueIndex("organization_property_unique").on(table.organizationId, table.propertyId),
