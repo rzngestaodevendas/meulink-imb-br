@@ -216,7 +216,13 @@ export default {
 
     const isStaticAsset = pathname === "/" || pathname === "/index.html" || pathname.startsWith("/assets/") || pathname === "/favicon.ico" || pathname === "/robots.txt";
     if (isStaticAsset) {
-      return workerEnv.ASSETS.fetch(request);
+      const assetResponse = await workerEnv.ASSETS.fetch(request);
+      if (pathname.startsWith("/assets/")) {
+        const headers = new Headers(assetResponse.headers);
+        headers.set("Cache-Control", "public, max-age=31536000, immutable");
+        return new Response(assetResponse.body, { status: assetResponse.status, headers });
+      }
+      return assetResponse;
     }
 
     return serveAppWithPreview(request, workerEnv.ASSETS);
