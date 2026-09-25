@@ -2,44 +2,47 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch, useRoute } from "wouter";
+import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import DashboardLayout from "./components/DashboardLayout";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import PublicProperty from "./pages/PublicProperty";
-import ManageProperties from "./pages/ManageProperties";
-import Team from "./pages/Team";
-import AuditLog from "./pages/AuditLog";
-import Organizations from "./pages/Organizations";
-import OrganizationDetail from "./pages/OrganizationDetail";
 import BrokerPortal from "./pages/BrokerPortal";
 import PublicCatalog from "./pages/PublicCatalog";
-import Developments from "./pages/Developments";
-import AdminUsers from "./pages/AdminUsers";
+const ManageProperties = lazy(() => import("./pages/ManageProperties"));
+const Team = lazy(() => import("./pages/Team"));
+const AuditLog = lazy(() => import("./pages/AuditLog"));
+const Organizations = lazy(() => import("./pages/Organizations"));
+const OrganizationDetail = lazy(() => import("./pages/OrganizationDetail"));
+const AdminUsers = lazy(() => import("./pages/AdminUsers"));
+const Developments = lazy(() => import("./pages/Developments"));
+const LoadingPage = () => <div className="grid min-h-[40vh] place-items-center text-sm text-slate-500">Carregando painel...</div>;
+const Lazy = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<LoadingPage />}>{children}</Suspense>;
 
 function ProtectedApp() {
-  return <DashboardLayout><Organizations /></DashboardLayout>;
+  return <DashboardLayout><Lazy><Organizations /></Lazy></DashboardLayout>;
 }
 
-function ProtectedDevelopments() { return <DashboardLayout><Developments /></DashboardLayout>; }
+function ProtectedDevelopments() { return <DashboardLayout><Lazy><Developments /></Lazy></DashboardLayout>; }
 
 function ProtectedProperties() {
-  return <DashboardLayout><ManageProperties /></DashboardLayout>;
+  return <DashboardLayout><Lazy><ManageProperties /></Lazy></DashboardLayout>;
 }
 
 function ProtectedTeam() {
-  return <DashboardLayout><Team /></DashboardLayout>;
+  return <DashboardLayout><Lazy><Team /></Lazy></DashboardLayout>;
 }
 
 function ProtectedAuditLog() {
-  return <DashboardLayout><AuditLog /></DashboardLayout>;
+  return <DashboardLayout><Lazy><AuditLog /></Lazy></DashboardLayout>;
 }
 
 function ProtectedOrganizations() {
-  return <DashboardLayout><Organizations /></DashboardLayout>;
+  return <DashboardLayout><Lazy><Organizations /></Lazy></DashboardLayout>;
 }
 
 function ProtectedAdminUsers() {
-  return <DashboardLayout><AdminUsers /></DashboardLayout>;
+  return <DashboardLayout><Lazy><AdminUsers /></Lazy></DashboardLayout>;
 }
 
 function FriendlyPath() {
@@ -72,7 +75,7 @@ function Router() {
       <Route path="/painelgestao/equipe" component={ProtectedTeam} />
       <Route path="/painelgestao/auditoria" component={ProtectedAuditLog} />
       <Route path="/painelgestao/construtoras" component={ProtectedOrganizations} />
-      <Route path="/painelgestao/construtoras/:id" component={() => <DashboardLayout><OrganizationDetail /></DashboardLayout>} />
+      <Route path="/painelgestao/construtoras/:id" component={() => <DashboardLayout><Lazy><OrganizationDetail /></Lazy></DashboardLayout>} />
       <Route path="/painelgestao/usuarios" component={ProtectedAdminUsers} />
       <Route path="/app" component={ProtectedApp} />
       <Route path="/app/imoveis" component={ProtectedProperties} />

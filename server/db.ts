@@ -124,10 +124,14 @@ export async function ensurePropertyPrivateColumns() {
   if (_propertyPrivateColumnsReady) return;
   const binding = getD1Binding();
   if (!binding) throw new Error("Database is not available");
-  for (const [name, type] of [["commission", "TEXT"], ["paymentConditions", "TEXT"], ["bedrooms", "INTEGER"], ["suites", "INTEGER"], ["bathrooms", "INTEGER"], ["privateArea", "TEXT"], ["keys", "TEXT"], ["developmentInfo", "TEXT"], ["mapUrl", "TEXT"], ["developmentName", "TEXT"], ["propertyType", "TEXT"], ["garageSpaces", "INTEGER"], ["unitNumber", "TEXT"], ["coverPhoto", "TEXT"], ["propertyPhotos", "TEXT"], ["developmentPhotos", "TEXT"], ["mapDriveUrl", "TEXT"], ["photosDriveUrl", "TEXT"], ["videosDriveUrl", "TEXT"]]) {
+  for (const [name, type] of [["commission", "TEXT"], ["paymentConditions", "TEXT"], ["bedrooms", "INTEGER"], ["suites", "INTEGER"], ["bathrooms", "INTEGER"], ["privateArea", "TEXT"], ["keys", "TEXT"], ["developmentInfo", "TEXT"], ["developmentId", "INTEGER"], ["mapUrl", "TEXT"], ["developmentName", "TEXT"], ["propertyType", "TEXT"], ["garageSpaces", "INTEGER"], ["unitNumber", "TEXT"], ["coverPhoto", "TEXT"], ["propertyPhotos", "TEXT"], ["developmentPhotos", "TEXT"], ["mapDriveUrl", "TEXT"], ["photosDriveUrl", "TEXT"], ["videosDriveUrl", "TEXT"]]) {
     try { await binding.prepare(`ALTER TABLE properties ADD COLUMN ${name} ${type}`).run(); }
     catch (error) { if (!String(error).toLowerCase().includes("duplicate column")) throw error; }
   }
+  await binding.prepare("CREATE INDEX IF NOT EXISTS properties_public_status_idx ON properties (publicEnabled, status)").run();
+  await binding.prepare("CREATE INDEX IF NOT EXISTS properties_organization_status_idx ON properties (organizationId, status, publicEnabled)").run();
+  await binding.prepare("CREATE INDEX IF NOT EXISTS properties_responsible_idx ON properties (organizationId, responsibleName)").run();
+  await binding.prepare("CREATE INDEX IF NOT EXISTS properties_development_idx ON properties (developmentId)").run();
   _propertyPrivateColumnsReady = true;
 }
 

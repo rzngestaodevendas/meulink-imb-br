@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { prepareImageForUpload } from "@/lib/imageOptimization";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -107,8 +108,8 @@ export default function ManageProperties({ compact = false, groupByResponsible =
     if (accepted.length !== files.length) toast.error("Use imagens JPG, PNG, WEBP ou GIF de até 8 MB cada.");
     const uploaded: string[] = [];
     for (const file of accepted) {
-      const data = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file); });
-      const result = await uploadPhoto.mutateAsync({ fileName: file.name, contentType: file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data });
+      const optimized = await prepareImageForUpload(file);
+      const result = await uploadPhoto.mutateAsync({ fileName: optimized.fileName, contentType: optimized.contentType, data: optimized.data });
       uploaded.push(result.url);
     }
     if (uploaded.length) { setForm(current => ({ ...current, ...(field === "coverPhoto" ? { coverPhoto: uploaded[0] } : { [field]: [...current[field].split("\n").filter(Boolean), ...uploaded].join("\n") }) })); toast.success(`${uploaded.length} foto(s) adicionada(s)`); }

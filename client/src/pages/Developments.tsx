@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { prepareImageForUpload } from "@/lib/imageOptimization";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,8 @@ export default function Developments() {
   const [editing, setEditing] = useState<number | "new" | null>(null); const [form, setForm] = useState<Form>(empty);
   const list = trpc.developments.list.useQuery(); const utils = trpc.useUtils();
   const uploadPhoto = trpc.properties.uploadPhoto.useMutation({ onError: e => toast.error(e.message) });
-  async function addPhotos(files: FileList | null) { const accepted = Array.from(files || []).filter(file => ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type) && file.size <= 8 * 1024 * 1024); if (!accepted.length) return; const uploaded: string[] = []; for (const file of accepted) { const data = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file); }); const result = await uploadPhoto.mutateAsync({ fileName: file.name, contentType: file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data }); uploaded.push(result.url); } setForm(current => ({ ...current, photos: [...current.photos.split("\n").filter(Boolean), ...uploaded].join("\n") })); toast.success(`${uploaded.length} foto(s) adicionada(s)`); }
+  async function addPhotos(files: FileList | null) { const accepted = Array.from(files || []).filter(file => ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type) && file.size <= 8 * 1024 * 1024); if (!accepted.length) return; const uploaded: string[] = []; for (const file of accepted) { const optimized = await prepareImageForUpload(file);
+      const result = await uploadPhoto.mutateAsync({ fileName: optimized.fileName, contentType: optimized.contentType, data: optimized.data }); uploaded.push(result.url); } setForm(current => ({ ...current, photos: [...current.photos.split("\n").filter(Boolean), ...uploaded].join("\n") })); toast.success(`${uploaded.length} foto(s) adicionada(s)`); }
   const create = trpc.developments.create.useMutation({ onSuccess: async () => { toast.success("Empreendimento cadastrado"); setEditing(null); setForm(empty); await utils.developments.list.invalidate(); }, onError: e => toast.error(e.message) });
   const update = trpc.developments.update.useMutation({ onSuccess: async () => { toast.success("Empreendimento atualizado e dados sincronizados nos imóveis vinculados"); setEditing(null); await utils.developments.list.invalidate(); await utils.catalog.list.invalidate(); }, onError: e => toast.error(e.message) });
   const remove = trpc.developments.delete.useMutation({ onSuccess: async () => { toast.success("Empreendimento excluído; os dados dos imóveis foram preservados"); await utils.developments.list.invalidate(); }, onError: e => toast.error(e.message) });
