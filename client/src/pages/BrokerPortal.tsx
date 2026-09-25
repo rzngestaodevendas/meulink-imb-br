@@ -44,8 +44,11 @@ const isBedroomSummary = (title: string) => /^\s*\d+\s*(dorm|quarto)/i.test(titl
 export default function BrokerPortal() {
   const [, params] = useRoute("/tabela/:slug");
   const [, pluralParams] = useRoute("/tabelas/:slug");
+  const [, responsibleParams] = useRoute("/tabela/:slug/:responsible");
+  const [, pluralResponsibleParams] = useRoute("/tabelas/:slug/:responsible");
   const [, friendlyParams] = useRoute("/:slug");
-  const slug = params?.slug || pluralParams?.slug || friendlyParams?.slug || "";
+  const slug = params?.slug || pluralParams?.slug || responsibleParams?.slug || pluralResponsibleParams?.slug || friendlyParams?.slug || "";
+  const responsible = responsibleParams?.responsible || pluralResponsibleParams?.responsible;
   const { user, loading, isAuthenticated, logout } = useAuth();
   const info = trpc.portal.info.useQuery({ slug }, { enabled: Boolean(slug), staleTime: 60_000 });
   const [authMode, setAuthMode] = useState<"login" | "register" | "forgot">(() => {
@@ -78,7 +81,7 @@ export default function BrokerPortal() {
   const profileUpload = trpc.auth.uploadProfilePhoto.useMutation({ onError: error => toast.error(error.message) });
   const registrationPhotoUpload = trpc.auth.uploadRegistrationPhoto.useMutation({ onError: error => toast.error(error.message) });
   const updateProfile = trpc.auth.updateProfile.useMutation({ onSuccess: async () => { await utils.auth.me.invalidate(); setEditingProfile(false); toast.success("Perfil atualizado"); }, onError: error => toast.error(error.message) });
-  const portal = trpc.portal.catalog.useQuery({ slug }, { enabled: Boolean(slug && isAuthenticated), staleTime: 15_000 });
+  const portal = trpc.portal.catalog.useQuery({ slug, responsible }, { enabled: Boolean(slug && isAuthenticated), staleTime: 15_000 });
   const currentInfo = info.data?.slug === slug ? info.data : undefined;
   const currentPortal = portal.data?.organization.slug === slug ? portal.data : undefined;
   const createLink = trpc.catalog.createLink.useMutation({

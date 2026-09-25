@@ -409,7 +409,7 @@ export const appRouter = router({
       rows.sort((a, b) => a.title.localeCompare(b.title));
       return { organization: { name: organization.name, publicName: organization.publicName, catalogPeriod: organization.catalogPeriod, slug: input.slug, logoUrl: organization.logoUrl, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName }, profiles: profileRows, properties: rows.map(row => parseProperty(row, true)) };
     }),
-    catalog: protectedProcedure.input(z.object({ slug: z.string().trim().min(2).max(120) })).query(async ({ ctx, input }) => {
+    catalog: protectedProcedure.input(z.object({ slug: z.string().trim().min(2).max(120), responsible: z.string().trim().max(180).optional() })).query(async ({ ctx, input }) => {
       await ensureOrganizationColumns(); await ensureResponsibleProfilesTable(); await ensurePropertyPrivateColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
@@ -418,8 +418,12 @@ export const appRouter = router({
       if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." });
       const [membership] = await db.select().from(organizationMembers).where(and(eq(organizationMembers.organizationId, organization.id), eq(organizationMembers.userId, ctx.user.id))).limit(1);
       if (!membership) throw new TRPCError({ code: "FORBIDDEN", message: "Sua conta não tem acesso a esta tabela." });
-      const rows = (await getPropertiesForOrganization(db, organization.id)).filter(row => row.status === "available" && row.publicEnabled === 1).sort((a, b) => a.title.localeCompare(b.title));
       const profiles = await db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, organization.id)).orderBy(responsibleProfiles.name);
+      const profileSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const selectedProfile = input.responsible ? profiles.find(profile => profile.name === input.responsible || profileSlug(profile.name) === input.responsible) : undefined;
+      let rows = (await getPropertiesForOrganization(db, organization.id)).filter(row => row.status === "available" && row.publicEnabled === 1);
+      if (input.responsible) rows = selectedProfile ? rows.filter(row => row.responsibleName?.trim().toLowerCase() === selectedProfile.name.trim().toLowerCase()) : [];
+      rows.sort((a, b) => a.title.localeCompare(b.title));
       return { organization: { id: organization.id, slug: input.slug, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, contactName: organization.contactName, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName, developmentDescription: organization.developmentDescription }, memberRole: membership.role, profiles, properties: rows.map(row => parseProperty(row, true)) };
     }),
   }),
