@@ -18,3 +18,9 @@ bucket_name = "meulink-fotos"
 
 [vars]
 NODE_ENV = "production"
+
+[images]
+binding = "IMAGES"
+
+[cache]
+enabled = true
