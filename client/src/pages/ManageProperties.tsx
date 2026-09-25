@@ -74,7 +74,7 @@ export default function ManageProperties({ compact = false, groupByResponsible =
   const utils = trpc.useUtils();
   const create = trpc.properties.create.useMutation({ onSuccess: () => { toast.success("Imóvel cadastrado"); setEditing(null); setForm(blankForm); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
   const update = trpc.properties.update.useMutation({ onSuccess: () => { toast.success("Imóvel atualizado"); setEditing(null); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
-  const deletePermanently = trpc.properties.deletePermanently.useMutation({ onSuccess: () => { toast.success("Imóvel excluído permanentemente"); setDeleteTarget(null); setEditing(null); setForm(blankForm); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
+  const deletePermanently = trpc.properties.deletePermanently.useMutation({ onSuccess: result => { toast.success(result.removedFromTableOnly ? "Imóvel removido desta tabela" : "Imóvel excluído permanentemente"); setDeleteTarget(null); setEditing(null); setForm(blankForm); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
   const archive = trpc.properties.archive.useMutation({ onSuccess: () => { toast.success("Imóvel arquivado"); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
   const bulkCreate = trpc.properties.bulkCreate.useMutation({ onSuccess: result => { toast.success(`${result.count} imóveis importados`); setImportCsv(""); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
   const uploadPhoto = trpc.properties.uploadPhoto.useMutation({ onError: error => toast.error(error.message) });

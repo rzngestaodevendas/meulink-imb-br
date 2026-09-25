@@ -44,6 +44,17 @@ export const organizations = sqliteTable("organizations", {
   updatedAt: timestamp("updatedAt"),
 });
 
+export const organizationProperties = sqliteTable("organizationProperties", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  organizationId: integer("organizationId").notNull(),
+  propertyId: integer("propertyId").notNull(),
+  createdAt: timestamp("createdAt"),
+}, table => ({
+  organizationPropertyUnique: uniqueIndex("organization_property_unique").on(table.organizationId, table.propertyId),
+  organizationIndex: index("organization_property_organization_idx").on(table.organizationId),
+  propertyIndex: index("organization_property_property_idx").on(table.propertyId),
+}));
+
 export const organizationMembers = sqliteTable("organizationMembers", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   organizationId: integer("organizationId").notNull(),

@@ -21,7 +21,7 @@ export default function Organizations() {
   const [, setLocation] = useLocation();
   const organizations = trpc.organizations.list.useQuery();
   const utils = trpc.useUtils();
-  const create = trpc.organizations.create.useMutation({ onSuccess: () => { setShowNewTable(false); toast.success("Tabela cadastrada e selecionada"); setForm(empty); utils.organizations.list.invalidate(); window.location.href = "/painelgestao/imoveis"; }, onError: error => toast.error(error.message) });
+  const create = trpc.organizations.create.useMutation({ onSuccess: result => { setShowNewTable(false); toast.success("Tabela cadastrada e selecionada"); setForm(empty); utils.organizations.list.invalidate(); window.location.href = `/painelgestao/construtoras/${result.id}`; }, onError: error => toast.error(error.message) });
   const update = trpc.organizations.update.useMutation({ onSuccess: () => { toast.success("Dados da tabela atualizados"); setEditingId(null); setForm(empty); utils.organizations.list.invalidate(); }, onError: error => toast.error(error.message) });
   const select = trpc.organizations.select.useMutation({ onSuccess: () => toast.success("Tabela selecionada"), onError: error => toast.error(error.message) });
   const uploadLogo = trpc.organizations.uploadLogo.useMutation({ onError: error => toast.error(error.message) });
