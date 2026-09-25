@@ -395,7 +395,6 @@ export const appRouter = router({
     }),
 
     publicByCode: publicProcedure.input(z.object({ code: z.string().regex(/^ML-\d+$/i) })).query(async ({ input }) => {
-      await ensurePropertyPrivateColumns(); await ensureOrganizationColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const propertyId = Number(input.code.replace(/\D/g, ""));
@@ -405,7 +404,6 @@ export const appRouter = router({
     }),
 
     publicFriendlyLink: publicProcedure.input(z.object({ code: z.string().regex(/^ML-\d+$/i), brokerSlug: z.string().trim().min(2).max(120) })).query(async ({ input }) => {
-      await ensurePropertyPrivateColumns(); await ensureShareLinkColumns(); await ensureOrganizationColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const propertyId = Number(input.code.replace(/\D/g, ""));
@@ -417,8 +415,6 @@ export const appRouter = router({
     }),
 
     publicLink: publicProcedure.input(z.object({ token: z.string().trim().min(8).max(80) })).query(async ({ input }) => {
-      await ensurePropertyPrivateColumns(); await ensureShareLinkColumns();
-      await ensureOrganizationColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const [link] = await db.select({ link: shareLinks, property: properties, organization: organizations }).from(shareLinks).innerJoin(properties, eq(shareLinks.propertyId, properties.id)).innerJoin(organizations, eq(shareLinks.organizationId, organizations.id)).where(and(eq(shareLinks.token, input.token), eq(shareLinks.enabled, 1), eq(properties.publicEnabled, 1), eq(properties.status, "available"))).limit(1);
