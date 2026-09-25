@@ -95,14 +95,14 @@ function parseCatalogProperty(row: typeof properties.$inferSelect) {
   return { ...property, notes: null, details: [], developmentInfo: null, photos: property.coverPhoto ? [property.coverPhoto] : (property.photos[0] ? [property.photos[0]] : []), propertyPhotos: [], developmentPhotos: [] };
 }
 
-async function getPropertiesForOrganization(db: Awaited<ReturnType<typeof getDb>>, organizationId: number) {
+async function getPropertiesForOrganization(db: Awaited<ReturnType<typeof getDb>>, organizationId: number, responsibleName?: string) {
   if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
   await ensureOrganizationPropertiesTable();
-  const owned = await db.select().from(properties).where(eq(properties.organizationId, organizationId));
+  const owned = await db.select().from(properties).where(responsibleName ? and(eq(properties.organizationId, organizationId), eq(properties.responsibleName, responsibleName)) : eq(properties.organizationId, organizationId));
   const links = await db.select({ propertyId: organizationProperties.propertyId }).from(organizationProperties).where(eq(organizationProperties.organizationId, organizationId));
   const linkedIds = links.map(link => link.propertyId).filter(id => !owned.some(property => property.id === id));
   if (!linkedIds.length) return owned;
-  const linked = await db.select().from(properties).where(inArray(properties.id, linkedIds));
+  const linked = await db.select().from(properties).where(responsibleName ? and(inArray(properties.id, linkedIds), eq(properties.responsibleName, responsibleName)) : inArray(properties.id, linkedIds));
   return [...owned, ...linked];
 }
 
@@ -438,8 +438,7 @@ export const appRouter = router({
       const profileRows = await db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, organization.id)).orderBy(responsibleProfiles.name);
       const profileSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       const selectedProfile = input.responsible ? profileRows.find(profile => profile.name === input.responsible || profileSlug(profile.name) === input.responsible) : undefined;
-      let rows = (await getPropertiesForOrganization(db, organization.id)).filter(row => row.status === "available" && row.publicEnabled === 1);
-      if (selectedProfile) rows = rows.filter(row => row.responsibleName === selectedProfile.name);
+      let rows = (await getPropertiesForOrganization(db, organization.id, selectedProfile?.name)).filter(row => row.status === "available" && row.publicEnabled === 1);
       rows.sort((a, b) => a.title.localeCompare(b.title));
       return { organization: { name: organization.name, publicName: organization.publicName, catalogPeriod: organization.catalogPeriod, slug: input.slug, logoUrl: organization.logoUrl, coverPhotoUrl: organization.coverPhotoUrl, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName }, profiles: profileRows, properties: rows.map(row => parseCatalogProperty(row)) };
     }),
