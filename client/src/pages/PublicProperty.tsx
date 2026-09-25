@@ -51,7 +51,7 @@ export default function PublicProperty() {
 
   return <main className="min-h-screen bg-[#f4f6f7] text-[#102c3d]">
     <div className="h-1.5 bg-gradient-to-r from-[#102c3d] via-[#d7b874] to-[#20bd63]" />
-    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+    <div className="mx-auto max-w-7xl px-4 py-0 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
       <section className="relative -mx-4 min-h-[390px] overflow-hidden rounded-none bg-[#102c3d] shadow-[0_24px_70px_rgba(16,44,61,0.2)] sm:mx-0 sm:min-h-[520px] sm:rounded-[2rem]">
         {coverPhoto && <img src={coverPhoto} alt={`Capa de ${property.title}`} className="absolute inset-0 h-full w-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-t from-[#06141d]/90 via-[#102c3d]/35 to-[#102c3d]/10" /><button type="button" onClick={() => void shareProperty()} className="absolute right-4 top-4 z-20 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/30 bg-[#102c3d]/75 px-4 text-sm font-bold text-white shadow-lg backdrop-blur transition hover:bg-[#102c3d] sm:right-6 sm:top-6"><Share2 className="h-4 w-4" />{shareCopied ? "Link copiado" : "Compartilhar"}</button>
