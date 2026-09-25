@@ -118,6 +118,10 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
 }
 
 async function serveAppWithPreview(request: Request, assets: Fetcher) {
+  const cache = caches.default;
+  const cacheKey = new Request(request.url, { method: "GET" });
+  const cached = await cache.match(cacheKey);
+  if (cached) return cached;
   const response = await assets.fetch(new Request(new URL("/", request.url), request));
   const preview = await getPropertyPreview(request);
   if (!preview || !response.ok) return response;
@@ -139,8 +143,10 @@ async function serveAppWithPreview(request: Request, assets: Fetcher) {
   const updated = withTitle.replace("</head>", `    ${tags}\n  </head>`);
   const headers = new Headers(response.headers);
   headers.set("Content-Type", "text/html; charset=UTF-8");
-  headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
-  return new Response(updated, { status: response.status, headers });
+  headers.set("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+  const result = new Response(updated, { status: response.status, headers });
+  await cache.put(cacheKey, result.clone());
+  return result;
 }
 
 const app = express();

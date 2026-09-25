@@ -90,6 +90,11 @@ function parseProperty(row: typeof properties.$inferSelect, includeInternal = tr
   };
 }
 
+function parseCatalogProperty(row: typeof properties.$inferSelect) {
+  const property = parseProperty(row, true);
+  return { ...property, notes: null, details: [], developmentInfo: null, photos: property.coverPhoto ? [property.coverPhoto] : (property.photos[0] ? [property.photos[0]] : []), propertyPhotos: [], developmentPhotos: [] };
+}
+
 async function getPropertiesForOrganization(db: Awaited<ReturnType<typeof getDb>>, organizationId: number) {
   if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
   await ensureOrganizationPropertiesTable();
@@ -436,7 +441,7 @@ export const appRouter = router({
       let rows = (await getPropertiesForOrganization(db, organization.id)).filter(row => row.status === "available" && row.publicEnabled === 1);
       if (selectedProfile) rows = rows.filter(row => row.responsibleName === selectedProfile.name);
       rows.sort((a, b) => a.title.localeCompare(b.title));
-      return { organization: { name: organization.name, publicName: organization.publicName, catalogPeriod: organization.catalogPeriod, slug: input.slug, logoUrl: organization.logoUrl, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName }, profiles: profileRows, properties: rows.map(row => parseProperty(row, true)) };
+      return { organization: { name: organization.name, publicName: organization.publicName, catalogPeriod: organization.catalogPeriod, slug: input.slug, logoUrl: organization.logoUrl, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName }, profiles: profileRows, properties: rows.map(row => parseCatalogProperty(row)) };
     }),
     catalog: protectedProcedure.input(z.object({ slug: z.string().trim().min(2).max(120), responsible: z.string().trim().max(180).optional() })).query(async ({ ctx, input }) => {
       await ensureOrganizationColumns(); await ensureResponsibleProfilesTable(); await ensurePropertyPrivateColumns();
@@ -453,7 +458,7 @@ export const appRouter = router({
       let rows = (await getPropertiesForOrganization(db, organization.id)).filter(row => row.status === "available" && row.publicEnabled === 1);
       if (input.responsible) rows = selectedProfile ? rows.filter(row => row.responsibleName?.trim().toLowerCase() === selectedProfile.name.trim().toLowerCase()) : [];
       rows.sort((a, b) => a.title.localeCompare(b.title));
-      return { organization: { id: organization.id, slug: input.slug, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, contactName: organization.contactName, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName, developmentDescription: organization.developmentDescription }, memberRole: membership.role, profiles, properties: rows.map(row => parseProperty(row, true)) };
+      return { organization: { id: organization.id, slug: input.slug, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, contactName: organization.contactName, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName, developmentDescription: organization.developmentDescription }, memberRole: membership.role, profiles, properties: rows.map(row => parseCatalogProperty(row)) };
     }),
   }),
 
