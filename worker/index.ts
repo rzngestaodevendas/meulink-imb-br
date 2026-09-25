@@ -186,9 +186,9 @@ app.get("/media/*", async (req, res) => {
   }
   const requestedWidth = Number(new URL(req.originalUrl || req.url, "https://meulink.invalid").searchParams.get("w"));
   const width = [480, 960, 1600].includes(requestedWidth) ? requestedWidth : null;
-  const images = (env as unknown as { IMAGES?: { input(source: Uint8Array): { transform(options: { width: number }): { output(options: { format: "image/webp" }): { response(options?: { headers?: Record<string, string> }): Promise<Response> } } } } }).IMAGES;
+  const images = (env as unknown as { IMAGES?: { input(source: ReadableStream): { transform(options: { width: number }): { output(options: { format: "image/webp" }): { response(options?: { headers?: Record<string, string> }): Promise<Response> } } } } }).IMAGES;
   if (width && images) {
-    const transformed = await images.input(new Uint8Array(await object.arrayBuffer())).transform({ width }).output({ format: "image/webp" }).response({ headers: { "Cache-Control": "public, max-age=31536000, immutable" } });
+    const transformed = await images.input(object.body).transform({ width }).output({ format: "image/webp" }).response({ headers: { "Cache-Control": "public, max-age=31536000, immutable" } });
     res.status(transformed.status);
     res.setHeader("Content-Type", "image/webp");
     res.send(Buffer.from(await transformed.arrayBuffer()));
