@@ -52,7 +52,6 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
   const url = new URL(request.url);
   const database = (env as unknown as { DB?: D1Database }).DB;
   if (!database) return null;
-  await ensurePreviewColumns(database);
 
   const catalogMatch = url.pathname.match(/^\/tabelas?\/([^/]+)(?:\/([^/]+))?\/?$/i);
   if (catalogMatch) {
@@ -83,6 +82,7 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
     }
   }
 
+  await ensurePreviewColumns(database);
   let property: PreviewProperty | null = null;
   let sharedBrokerName = "";
   const codeMatch = url.pathname.match(/^\/(?:imovel|((?:corretor|corretora)\/([^/]+))\/imovel)\/(ML-\d+)$/i);

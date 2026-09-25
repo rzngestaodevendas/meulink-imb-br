@@ -6,9 +6,9 @@ import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import DashboardLayout from "./components/DashboardLayout";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import PublicProperty from "./pages/PublicProperty";
-import BrokerPortal from "./pages/BrokerPortal";
-import PublicCatalog from "./pages/PublicCatalog";
+const PublicProperty = lazy(() => import("./pages/PublicProperty"));
+const BrokerPortal = lazy(() => import("./pages/BrokerPortal"));
+const PublicCatalog = lazy(() => import("./pages/PublicCatalog"));
 const ManageProperties = lazy(() => import("./pages/ManageProperties"));
 const Team = lazy(() => import("./pages/Team"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
@@ -18,6 +18,9 @@ const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const Developments = lazy(() => import("./pages/Developments"));
 const LoadingPage = () => <div className="grid min-h-[40vh] place-items-center text-sm text-slate-500">Carregando painel...</div>;
 const Lazy = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<LoadingPage />}>{children}</Suspense>;
+const PublicPropertyRoute = () => <Lazy><PublicProperty /></Lazy>;
+const BrokerPortalRoute = () => <Lazy><BrokerPortal /></Lazy>;
+const PublicCatalogRoute = () => <Lazy><PublicCatalog /></Lazy>;
 
 function ProtectedApp() {
   return <DashboardLayout><Lazy><Organizations /></Lazy></DashboardLayout>;
@@ -48,25 +51,25 @@ function ProtectedAdminUsers() {
 function FriendlyPath() {
   const [, params] = useRoute("/:value");
   const value = params?.value || "";
-  return /^ML-\d+$/i.test(value) ? <PublicProperty /> : <BrokerPortal />;
+  return /^ML-\d+$/i.test(value) ? <PublicPropertyRoute /> : <BrokerPortalRoute />;
 }
 
 function PublicTableEntry() {
   const search = new URLSearchParams(window.location.search);
-  return search.has("acesso") || search.has("compartilhar") ? <BrokerPortal /> : <PublicCatalog />;
+  return search.has("acesso") || search.has("compartilhar") ? <BrokerPortalRoute /> : <PublicCatalogRoute />;
 }
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={PublicProperty} />
-      <Route path="/imovel/:code" component={PublicProperty} />
-      <Route path="/corretor/:brokerSlug/imovel/:code" component={PublicProperty} />
-      <Route path="/corretora/:brokerSlug/imovel/:code" component={PublicProperty} />
-      <Route path="/tabelas/:slug/compartilhar" component={PublicCatalog} />
+      <Route path="/" component={PublicPropertyRoute} />
+      <Route path="/imovel/:code" component={PublicPropertyRoute} />
+      <Route path="/corretor/:brokerSlug/imovel/:code" component={PublicPropertyRoute} />
+      <Route path="/corretora/:brokerSlug/imovel/:code" component={PublicPropertyRoute} />
+      <Route path="/tabelas/:slug/compartilhar" component={PublicCatalogRoute} />
       <Route path="/tabelas/:slug/:responsible" component={PublicTableEntry} />
       <Route path="/tabelas/:slug" component={PublicTableEntry} />
-      <Route path="/tabela/:slug/compartilhar" component={PublicCatalog} />
+      <Route path="/tabela/:slug/compartilhar" component={PublicCatalogRoute} />
       <Route path="/tabela/:slug/:responsible" component={PublicTableEntry} />
       <Route path="/tabela/:slug" component={PublicTableEntry} />
       <Route path="/painelgestao" component={ProtectedApp} />
