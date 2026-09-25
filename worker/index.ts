@@ -192,6 +192,7 @@ app.get("/media/*", async (req, res) => {
     const transformed = await output.response({ headers: { "Cache-Control": "public, max-age=31536000, immutable" } });
     res.status(transformed.status);
     res.setHeader("Content-Type", "image/webp");
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     res.send(Buffer.from(await transformed.arrayBuffer()));
     return;
   }
