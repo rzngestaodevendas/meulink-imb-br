@@ -1,6 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Expand, MapPin, MessageCircle, Share2, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
 
 export default function PublicProperty() {
@@ -33,6 +33,11 @@ export default function PublicProperty() {
   const galleryPhotos = property.propertyPhotos?.length ? property.propertyPhotos : photos.slice(1);
   const developmentPhotos = property.developmentPhotos || [];
   const currentPhoto = galleryPhotos[photoIndex];
+  useEffect(() => {
+    if (developmentPhotos.length <= 1) return;
+    const timer = window.setInterval(() => setDevelopmentPhotoIndex(index => (index + 1) % developmentPhotos.length), 5000);
+    return () => window.clearInterval(timer);
+  }, [developmentPhotos.length]);
   const whatsapp = broker?.phone ? `https://wa.me/${broker.phone}?text=${encodeURIComponent(`Olá ${broker.name.split(/\s+/)[0]}, vi a página do imóvel "${property.title}" (${property.price || "valor sob consulta"}) e gostaria de mais informações e de agendar uma visita.`)}` : "";
   const region = property.address?.match(/Capão da Canoa|Xangri-Lá|Maquiné|Parobé|Osório|Tramandaí|Torres|Carlos Barbosa|Porto Belo/i)?.[0];
   const bedrooms = property.bedrooms != null ? String(property.bedrooms) : `${property.title} ${(property.details || []).join(" ")} ${property.notes || ""}`.match(/(\d+)\s*dorm/i)?.[1];
