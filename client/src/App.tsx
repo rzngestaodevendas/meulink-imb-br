@@ -64,10 +64,10 @@ function Router() {
       <Route path="/corretor/:brokerSlug/imovel/:code" component={PublicProperty} />
       <Route path="/corretora/:brokerSlug/imovel/:code" component={PublicProperty} />
       <Route path="/tabelas/:slug/compartilhar" component={PublicCatalog} />
-      <Route path="/tabelas/:slug/:responsible" component={PublicCatalog} />
+      <Route path="/tabelas/:slug/:responsible" component={PublicTableEntry} />
       <Route path="/tabelas/:slug" component={PublicTableEntry} />
       <Route path="/tabela/:slug/compartilhar" component={PublicCatalog} />
-      <Route path="/tabela/:slug/:responsible" component={PublicCatalog} />
+      <Route path="/tabela/:slug/:responsible" component={PublicTableEntry} />
       <Route path="/tabela/:slug" component={PublicTableEntry} />
       <Route path="/painelgestao" component={ProtectedApp} />
       <Route path="/painelgestao/imoveis" component={ProtectedProperties} />
