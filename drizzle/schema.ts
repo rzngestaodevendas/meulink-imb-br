@@ -30,6 +30,7 @@ export const organizations = sqliteTable("organizations", {
   publicName: text("publicName"),
   catalogPeriod: text("catalogPeriod").notNull().default("Setembro de 2026"),
   logoUrl: text("logoUrl"),
+  coverPhotoUrl: text("coverPhotoUrl"),
   contactName: text("contactName"),
   contactPhone: text("contactPhone"),
   secondaryContactName: text("secondaryContactName"),

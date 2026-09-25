@@ -32,7 +32,7 @@ type Property = {
 };
 
 type Profile = { name: string; phone: string | null; email: string | null; creci: string | null; photoUrl: string | null; bio: string | null };
-type Organization = { slug: string; name: string; publicName: string | null; catalogPeriod: string | null; logoUrl: string | null; contactPhone?: string | null };
+type Organization = { slug: string; name: string; publicName: string | null; catalogPeriod: string | null; logoUrl: string | null; coverPhotoUrl?: string | null; contactPhone?: string | null };
 type ResponsibleGroup = { name: string; profile?: Profile; properties: Property[] };
 
 const profileSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -104,7 +104,7 @@ export default function PublicCatalog() {
   return <div className="min-h-screen bg-[#f5f7f8] text-[#102c3d]">
     <main className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
       <header className={`relative mb-8 overflow-hidden rounded-2xl border shadow-[0_18px_50px_rgba(16,44,61,0.08)] sm:rounded-[2rem] ${isMasterplan ? "border-black bg-black" : "border-slate-200 bg-white"}`}>
-        <div className={`relative flex min-h-56 items-center justify-center overflow-hidden px-3 py-5 sm:min-h-72 sm:px-8 sm:py-8 lg:min-h-80 ${isMasterplan ? "bg-black" : "bg-white"}`}><div className="relative flex h-full w-full items-center justify-center">{organization.logoUrl ? <img loading="lazy" decoding="async" src={organization.logoUrl} alt={`Logo ${organizationName}`} className="max-h-40 w-full max-w-4xl object-contain sm:max-h-52 lg:max-h-60" /> : <Building2 className="h-16 w-16 text-slate-400" />}</div></div>
+        <div className={`relative flex min-h-56 items-center justify-center overflow-hidden px-3 py-5 sm:min-h-72 sm:px-8 sm:py-8 lg:min-h-80 ${isMasterplan ? "bg-black" : "bg-white"}`}>{organization.coverPhotoUrl ? <img loading="eager" fetchPriority="high" decoding="async" src={organization.coverPhotoUrl} alt={`Capa de ${organizationName}`} className="absolute inset-0 h-full w-full object-cover" /> : null}<div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />{organization.logoUrl ? <img loading="eager" fetchPriority="high" decoding="async" src={organization.logoUrl} alt={`Logo ${organizationName}`} className="relative z-10 max-h-40 w-full max-w-4xl object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] sm:max-h-52 lg:max-h-60" /> : <Building2 className="relative z-10 h-16 w-16 text-slate-400" />}</div>
       </header>
       <div className="mb-8 flex flex-col items-center gap-4 px-2 text-center sm:mb-10"><div><h1 className="text-2xl font-semibold tracking-tight text-[#102c3d] sm:text-3xl">{catalogTitle}</h1><p className="mt-1 text-sm font-normal text-slate-500 sm:text-base">{catalogPeriod}</p></div>{primaryPhone && !profile && <a href={`https://wa.me/${primaryPhone}?text=${encodeURIComponent("Olá, gostaria de informações sobre os imóveis.")}`} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#20bd63] px-5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#12934a]"><MessageCircle className="h-5 w-5" /> Falar no WhatsApp</a>}</div>
       <section className="space-y-10">

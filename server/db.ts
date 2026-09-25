@@ -51,6 +51,7 @@ export async function ensureOrganizationColumns() {
     ["entityType", "TEXT NOT NULL DEFAULT 'construtora'"],
     ["catalogPeriod", "TEXT NOT NULL DEFAULT 'Setembro de 2026'"],
     ["logoUrl", "TEXT"],
+    ["coverPhotoUrl", "TEXT"],
     ["contactName", "TEXT"],
     ["contactPhone", "TEXT"],
     ["secondaryContactName", "TEXT"],
