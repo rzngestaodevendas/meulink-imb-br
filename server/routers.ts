@@ -116,7 +116,6 @@ function parseCatalogProperty(row: typeof properties.$inferSelect) {
 
 async function getPropertiesForOrganization(db: Awaited<ReturnType<typeof getDb>>, organizationId: number, responsibleName?: string) {
   if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
-  await ensureOrganizationPropertiesTable();
   const owned = await db.select().from(properties).where(responsibleName ? and(eq(properties.organizationId, organizationId), eq(properties.responsibleName, responsibleName)) : eq(properties.organizationId, organizationId));
   const links = await db.select({ propertyId: organizationProperties.propertyId }).from(organizationProperties).where(eq(organizationProperties.organizationId, organizationId));
   const linkedIds = links.map(link => link.propertyId).filter(id => !owned.some(property => property.id === id));

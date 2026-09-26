@@ -82,6 +82,8 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
     }
   }
 
+  const propertyRoute = url.pathname.match(/^\/(?:imovel|((?:corretor|corretora)\/([^/]+))\/imovel)\/ML-\d+$/i);
+  if (!propertyRoute && !url.searchParams.has("link")) return null;
   await ensurePreviewColumns(database);
   let property: PreviewProperty | null = null;
   let sharedBrokerName = "";
@@ -122,8 +124,10 @@ async function serveAppWithPreview(request: Request, assets: Fetcher) {
   const cacheKey = new Request(request.url, { method: "GET" });
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
-  const response = await assets.fetch(new Request(new URL("/", request.url), request));
-  const preview = await getPropertyPreview(request);
+  const [response, preview] = await Promise.all([
+    assets.fetch(new Request(new URL("/", request.url), request)),
+    getPropertyPreview(request),
+  ]);
   if (!preview || !response.ok) return response;
   const html = await response.text();
   const tags = [
