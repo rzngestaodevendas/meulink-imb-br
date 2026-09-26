@@ -74,7 +74,8 @@ export default function ManageProperties({ compact = false, groupByResponsible =
   const developments = trpc.developments.list.useQuery(undefined, { staleTime: 10_000 });
   const responsibleProfiles = trpc.responsibleProfiles.list.useQuery(undefined, { enabled: Boolean(organizations.data?.length), staleTime: 10_000 });
   const utils = trpc.useUtils();
-  const create = trpc.properties.create.useMutation({ onSuccess: () => { toast.success("Imóvel cadastrado"); setEditing(null); setForm(blankForm); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
+  const draftKey = "meulink-property-draft";
+  const create = trpc.properties.create.useMutation({ onSuccess: created => { toast.success(`Imóvel cadastrado: ${created.title}`); setEditing(null); setForm(blankForm); try { sessionStorage.removeItem(draftKey); } catch {} utils.catalog.list.invalidate(); }, onError: error => toast.error(`Não foi possível salvar o imóvel: ${error.message}. O rascunho foi preservado nesta sessão.`) });
   const update = trpc.properties.update.useMutation({ onSuccess: () => { toast.success("Imóvel atualizado"); setEditing(null); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
   const deletePermanently = trpc.properties.deletePermanently.useMutation({ onSuccess: result => { toast.success(result.removedFromTableOnly ? "Imóvel removido desta tabela" : "Imóvel excluído permanentemente"); setDeleteTarget(null); setEditing(null); setForm(blankForm); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
   const archive = trpc.properties.archive.useMutation({ onSuccess: () => { toast.success("Imóvel arquivado"); utils.catalog.list.invalidate(); }, onError: error => toast.error(error.message) });
@@ -87,8 +88,11 @@ export default function ManageProperties({ compact = false, groupByResponsible =
   const editingProperty = useMemo(() => editing && editing !== "new" ? properties.find(property => property.id === editing) : undefined, [editing, properties]);
 
   const hasOrganization = Boolean(organizations.data?.length);
-  function openNew() { if (!hasOrganization) { toast.error("Cadastre ou selecione uma construtora/tabela antes de incluir imóveis."); window.location.href = "/painelgestao/construtoras"; return; } setEditing("new"); setForm(blankForm); }
+  function openNew() { if (!hasOrganization) { toast.error("Cadastre ou selecione uma construtora/tabela antes de incluir imóveis."); window.location.href = "/painelgestao/construtoras"; return; } setEditing("new"); try { const saved = sessionStorage.getItem(draftKey); setForm(saved ? { ...blankForm, ...JSON.parse(saved) } : blankForm); } catch { setForm(blankForm); } }
   function openEdit(property: Property) { setEditing(property.id); setForm(toForm(property)); }
+  useEffect(() => {
+    if (editing === "new") { try { sessionStorage.setItem(draftKey, JSON.stringify(form)); } catch {} }
+  }, [editing, form]);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("novo") === "1" && hasOrganization) {
