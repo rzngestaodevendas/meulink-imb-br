@@ -64,16 +64,16 @@ function parseTable(text: string) {
   });
 }
 
-export default function ManageProperties({ compact = false, groupByResponsible = false }: { compact?: boolean; groupByResponsible?: boolean }) {
+export default function ManageProperties({ organizationId, compact = false, groupByResponsible = false }: { organizationId?: number; compact?: boolean; groupByResponsible?: boolean }) {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
   const [form, setForm] = useState<FormState>(blankForm);
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
-  const catalog = trpc.catalog.list.useQuery({ search }, { staleTime: 10_000 });
+  const catalog = trpc.catalog.list.useQuery({ search, organizationId }, { staleTime: 10_000 });
   const organizations = trpc.organizations.list.useQuery();
   const developments = trpc.developments.list.useQuery(undefined, { staleTime: 10_000 });
-  const responsibleProfiles = trpc.responsibleProfiles.list.useQuery(undefined, { enabled: Boolean(organizations.data?.length), staleTime: 10_000 });
+  const responsibleProfiles = trpc.responsibleProfiles.list.useQuery({ organizationId: organizationId || organizations.data?.[0]?.id || 0 }, { enabled: Boolean(organizationId || organizations.data?.length), staleTime: 10_000 });
   const utils = trpc.useUtils();
   const draftKey = "meulink-property-draft";
   const create = trpc.properties.create.useMutation({ onSuccess: created => { toast.success(`Imóvel cadastrado: ${created.title}`); setEditing(null); setForm(blankForm); try { sessionStorage.removeItem(draftKey); } catch {} utils.catalog.list.invalidate(); }, onError: error => toast.error(`Não foi possível salvar o imóvel: ${error.message}. O rascunho foi preservado nesta sessão.`) });

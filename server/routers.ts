@@ -149,6 +149,21 @@ async function requireCompanyAdmin(ctx: { user: { id: number; openId: string; ro
   return scope;
 }
 
+async function requireCompanyAdminForOrganization(ctx: { user: { id: number; openId: string; role: string; activeOrganizationId?: number | null } }, organizationId: number) {
+  await ensureOrganizationColumns();
+  const db = await getDb();
+  if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+  if (ctx.user.role === "admin" || ctx.user.openId === ENV.ownerOpenId) {
+    const [organization] = await db.select().from(organizations).where(eq(organizations.id, organizationId)).limit(1);
+    if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." });
+    return { organizationId, memberRole: "company_admin" as const, organization };
+  }
+  const scope = await getOrganizationForUser(ctx.user.id, ctx.user.openId, ctx.user.role, organizationId);
+  if (!scope) throw new TRPCError({ code: "FORBIDDEN", message: "Você não pertence a esta tabela." });
+  if (scope.memberRole !== "company_admin") throw new TRPCError({ code: "FORBIDDEN", message: "Somente administradores da empresa podem gerenciar esta tabela." });
+  return scope;
+}
+
 async function recordAudit(ctx: { user: { id: number } }, organizationId: number, action: z.infer<typeof auditActionSchema>, entityType: string, entityId?: number, metadata?: Record<string, unknown>) {
   await writeAuditLog({ organizationId, actorUserId: ctx.user.id, action, entityType, entityId: entityId ?? null, metadata: metadata ? JSON.stringify(metadata) : null });
 }
@@ -366,11 +381,11 @@ export const appRouter = router({
   }),
 
   responsibleProfiles: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
+    list: protectedProcedure.input(z.object({ organizationId: z.number().int().positive() })).query(async ({ ctx, input }) => {
       await ensureResponsibleProfilesTable();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
-      const scope = await requireCompanyAdmin(ctx);
+      const scope = await requireCompanyAdminForOrganization(ctx, input.organizationId);
       const saved = await db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, scope.organizationId)).orderBy(responsibleProfiles.name);
       const propertyRows = await db.select({ name: properties.responsibleName, phone: properties.responsiblePhone }).from(properties).where(and(eq(properties.organizationId, scope.organizationId), eq(properties.status, "available")));
       const savedNames = new Set(saved.map(profile => profile.name.trim().toLowerCase()));
@@ -400,11 +415,11 @@ export const appRouter = router({
   }),
 
   catalog: router({
-    list: protectedProcedure.input(propertyInput.optional()).query(async ({ ctx, input }) => {
+    list: protectedProcedure.input(propertyInput.extend({ organizationId: z.number().int().positive().optional() }).optional()).query(async ({ ctx, input }) => {
       await ensurePropertyPrivateColumns();
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
-      const scope = await requireCompanyAdmin(ctx);
+      const scope = input?.organizationId ? await requireCompanyAdminForOrganization(ctx, input.organizationId) : await requireCompanyAdmin(ctx);
       const search = input?.search?.trim().toLowerCase();
       const rows = await getPropertiesForOrganization(db, scope.organizationId);
       return rows.filter(row => !search || [row.title, row.address, row.price, row.developmentName].some(value => value?.toLowerCase().includes(search))).sort((a, b) => a.title.localeCompare(b.title)).map(row => parseProperty(row));
