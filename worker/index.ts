@@ -227,6 +227,22 @@ export default {
     const pathname = new URL(request.url).pathname;
     const isBackendRoute = pathname === "/health" || pathname.startsWith("/api/") || pathname.startsWith("/media/");
     if (isBackendRoute) {
+      const isPublicCatalogApi = request.method === "GET" && pathname === "/api/trpc/portal.publicCatalog" && !request.headers.get("cookie");
+      if (isPublicCatalogApi) {
+        const cache = caches.default;
+        const cacheKey = new Request(request.url, { method: "GET" });
+        const cached = await cache.match(cacheKey);
+        if (cached) return cached;
+        const response = await nodeHandler.fetch(request, workerEnv, ctx);
+        if (response.ok) {
+          const headers = new Headers(response.headers);
+          headers.set("Cache-Control", "public, max-age=30, s-maxage=60, stale-while-revalidate=120");
+          const cachedResponse = new Response(response.body, { status: response.status, headers });
+          ctx.waitUntil(cache.put(cacheKey, cachedResponse.clone()));
+          return cachedResponse;
+        }
+        return response;
+      }
       return nodeHandler.fetch(request, workerEnv, ctx);
     }
 
