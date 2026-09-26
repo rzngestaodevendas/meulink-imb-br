@@ -116,14 +116,23 @@ function parseCatalogProperty(row: typeof properties.$inferSelect) {
 
 async function getPropertiesForOrganization(db: Awaited<ReturnType<typeof getDb>>, organizationId: number, responsibleName?: string) {
   if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+  const normalizeResponsible = (value: string | null | undefined) => value?.trim().toLocaleLowerCase() || "";
+  const requestedResponsible = normalizeResponsible(responsibleName);
   const [owned, links] = await Promise.all([
     db.select().from(properties).where(responsibleName ? and(eq(properties.organizationId, organizationId), eq(properties.responsibleName, responsibleName)) : eq(properties.organizationId, organizationId)),
-    db.select({ propertyId: organizationProperties.propertyId }).from(organizationProperties).where(eq(organizationProperties.organizationId, organizationId)),
+    db.select({ propertyId: organizationProperties.propertyId, responsibleName: organizationProperties.responsibleName, responsiblePhone: organizationProperties.responsiblePhone }).from(organizationProperties).where(eq(organizationProperties.organizationId, organizationId)),
   ]);
   const linkedIds = links.map(link => link.propertyId).filter(id => !owned.some(property => property.id === id));
   if (!linkedIds.length) return owned;
-  const linked = await db.select().from(properties).where(responsibleName ? and(inArray(properties.id, linkedIds), eq(properties.responsibleName, responsibleName)) : inArray(properties.id, linkedIds));
-  return [...owned, ...linked];
+  const linked = await db.select().from(properties).where(inArray(properties.id, linkedIds));
+  const linkedById = new Map(links.map(link => [link.propertyId, link]));
+  const scopedLinked = linked.flatMap(property => {
+    const link = linkedById.get(property.id);
+    const effectiveName = link?.responsibleName?.trim() || property.responsibleName;
+    if (requestedResponsible && normalizeResponsible(effectiveName) !== requestedResponsible) return [];
+    return [{ ...property, responsibleName: effectiveName, responsiblePhone: link?.responsiblePhone?.trim() || property.responsiblePhone }];
+  });
+  return [...owned, ...scopedLinked];
 }
 
 async function propertyBelongsToOrganization(db: Awaited<ReturnType<typeof getDb>>, organizationId: number, propertyId: number) {
@@ -471,8 +480,7 @@ export const appRouter = router({
       const profiles = await db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, organization.id)).orderBy(responsibleProfiles.name);
       const profileSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       const selectedProfile = input.responsible ? profiles.find(profile => profile.name === input.responsible || profileSlug(profile.name) === input.responsible) : undefined;
-      let rows = (await getPropertiesForOrganization(db, organization.id)).filter(row => row.status === "available" && row.publicEnabled === 1);
-      if (input.responsible) rows = selectedProfile ? rows.filter(row => row.responsibleName?.trim().toLowerCase() === selectedProfile.name.trim().toLowerCase()) : [];
+      let rows = (await getPropertiesForOrganization(db, organization.id, selectedProfile?.name)).filter(row => row.status === "available" && row.publicEnabled === 1);
       rows.sort((a, b) => a.title.localeCompare(b.title));
       return { organization: { id: organization.id, slug: input.slug, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, contactName: organization.contactName, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName, developmentDescription: organization.developmentDescription }, memberRole: membership.role, profiles, properties: rows.map(row => parseCatalogProperty(row)) };
     }),
