@@ -69,6 +69,7 @@ export default function ManageProperties({ compact = false, groupByResponsible =
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
   const [form, setForm] = useState<FormState>(blankForm);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const catalog = trpc.catalog.list.useQuery({ search }, { staleTime: 10_000 });
   const organizations = trpc.organizations.list.useQuery();
   const developments = trpc.developments.list.useQuery(undefined, { staleTime: 10_000 });
@@ -111,14 +112,23 @@ export default function ManageProperties({ compact = false, groupByResponsible =
     const accepted = files.filter(file => ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type) && file.size <= 8 * 1024 * 1024);
     if (accepted.length !== files.length) toast.error("Use imagens JPG, PNG, WEBP ou GIF de até 8 MB cada.");
     const uploaded: string[] = [];
-    for (let start = 0; start < accepted.length; start += 3) {
-      const batch = accepted.slice(start, start + 3);
-      const results = await Promise.all(batch.map(async file => {
-        const optimized = await prepareImageForUpload(file);
-        return uploadPhoto.mutateAsync({ fileName: optimized.fileName, contentType: optimized.contentType, data: optimized.data });
-      }));
-      uploaded.push(...results.map(result => result.url));
+    let completed = 0;
+    setUploadProgress({ done: 0, total: accepted.length });
+    try {
+      for (let start = 0; start < accepted.length; start += 3) {
+        const batch = accepted.slice(start, start + 3);
+        const results = await Promise.allSettled(batch.map(async file => {
+          const optimized = await prepareImageForUpload(file);
+          return uploadPhoto.mutateAsync({ fileName: optimized.fileName, contentType: optimized.contentType, data: optimized.data });
+        }));
+        results.forEach(result => { if (result.status === "fulfilled") uploaded.push(result.value.url); });
+        completed += batch.length;
+        setUploadProgress({ done: completed, total: accepted.length });
+      }
+    } finally {
+      setUploadProgress(null);
     }
+    if (uploaded.length < accepted.length) toast.error(`${accepted.length - uploaded.length} foto(s) não puderam ser enviadas. Tente novamente.`);
     if (uploaded.length) { setForm(current => ({ ...current, ...(field === "coverPhoto" ? { coverPhoto: uploaded[0] } : { [field]: [...current[field].split("\n").filter(Boolean), ...uploaded].join("\n") }) })); toast.success(`${uploaded.length} foto(s) adicionada(s)`); }
   }
   async function removePhoto(photo: string) {
@@ -169,7 +179,7 @@ export default function ManageProperties({ compact = false, groupByResponsible =
       <label className="grid gap-2 text-sm font-medium">Status<select value={form.status} onChange={event => setForm({ ...form, status: event.target.value as Status })} className="h-10 rounded-md border bg-background px-3 text-sm">{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label className="grid gap-2 text-sm font-medium">Descrição do imóvel <span className="text-xs font-normal text-slate-500">Texto livre; títulos, espaços e quebras de linha serão preservados.</span><textarea value={form.notes} onChange={event => setForm({ ...form, notes: event.target.value })} className="min-h-32 rounded-md border bg-background px-3 py-2 text-sm" placeholder="Descreva o imóvel, diferenciais e condições comerciais..." /></label>
       <label className="flex items-center gap-3 text-sm font-medium lg:col-span-2"><input type="checkbox" checked={form.publicEnabled} onChange={event => setForm({ ...form, publicEnabled: event.target.checked })} className="h-4 w-4 accent-[#20bd63]" /> Permitir divulgação em links públicos</label>
-      <div className="flex flex-wrap justify-end gap-2 lg:col-span-2"><Button type="button" variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button type="submit" disabled={busy} className="gap-2 bg-[#20bd63] hover:bg-[#12934a]"><Save className="h-4 w-4" /> {busy ? "Salvando..." : "Salvar imóvel"}</Button></div>
+      <div className="flex flex-wrap items-center justify-end gap-2 lg:col-span-2">{uploadProgress && <span className="mr-auto text-xs font-semibold text-[#168044]">Enviando fotos: {uploadProgress.done}/{uploadProgress.total}</span>}<Button type="button" variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button type="submit" disabled={busy} className="gap-2 bg-[#20bd63] hover:bg-[#12934a]"><Save className="h-4 w-4" /> {busy ? "Salvando..." : "Salvar imóvel"}</Button></div>
     </form></CardContent></Card>}
 
     {!compact && <Card className="mb-6 border-0 shadow-sm"><CardHeader><CardTitle className="flex items-center gap-2 text-base text-[#102c3d]"><UploadCloud className="h-4 w-4" /> Importar imóveis da tabela</CardTitle><p className="text-xs text-slate-500">Cole CSV separado por ponto e vírgula. A importação será vinculada à tabela selecionada.</p></CardHeader><CardContent><textarea disabled={!hasOrganization} value={importCsv} onChange={event => setImportCsv(event.target.value)} className="min-h-32 w-full rounded-md border bg-background px-3 py-2 font-mono text-xs disabled:cursor-not-allowed disabled:bg-slate-100" placeholder={hasOrganization ? sampleCsv : "Cadastre uma construtora para liberar a importação."} /><div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-slate-500">Até 200 imóveis por importação. Fotos podem ser URLs públicas ou do storage do MeuLink.</p><Button disabled={!hasOrganization || bulkCreate.isPending || !importCsv.trim()} onClick={() => { try { bulkCreate.mutate({ rows: parseTable(importCsv) }); } catch (error) { toast.error(error instanceof Error ? error.message : "Tabela inválida"); } }} className="gap-2 bg-[#20bd63] hover:bg-[#12934a]"><UploadCloud className="h-4 w-4" /> {bulkCreate.isPending ? "Importando..." : "Importar tabela"}</Button></div></CardContent></Card>}
