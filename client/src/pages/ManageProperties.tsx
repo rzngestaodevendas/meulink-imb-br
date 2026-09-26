@@ -111,10 +111,13 @@ export default function ManageProperties({ compact = false, groupByResponsible =
     const accepted = files.filter(file => ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type) && file.size <= 8 * 1024 * 1024);
     if (accepted.length !== files.length) toast.error("Use imagens JPG, PNG, WEBP ou GIF de até 8 MB cada.");
     const uploaded: string[] = [];
-    for (const file of accepted) {
-      const optimized = await prepareImageForUpload(file);
-      const result = await uploadPhoto.mutateAsync({ fileName: optimized.fileName, contentType: optimized.contentType, data: optimized.data });
-      uploaded.push(result.url);
+    for (let start = 0; start < accepted.length; start += 3) {
+      const batch = accepted.slice(start, start + 3);
+      const results = await Promise.all(batch.map(async file => {
+        const optimized = await prepareImageForUpload(file);
+        return uploadPhoto.mutateAsync({ fileName: optimized.fileName, contentType: optimized.contentType, data: optimized.data });
+      }));
+      uploaded.push(...results.map(result => result.url));
     }
     if (uploaded.length) { setForm(current => ({ ...current, ...(field === "coverPhoto" ? { coverPhoto: uploaded[0] } : { [field]: [...current[field].split("\n").filter(Boolean), ...uploaded].join("\n") }) })); toast.success(`${uploaded.length} foto(s) adicionada(s)`); }
   }
