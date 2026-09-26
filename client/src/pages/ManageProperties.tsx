@@ -125,10 +125,11 @@ export default function ManageProperties({ compact = false, groupByResponsible =
   }
   function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (uploadPhoto.isPending) { toast.info("Aguarde o envio das fotos terminar antes de salvar o imóvel."); return; }
     const data = { developmentId: form.developmentId ? Number(form.developmentId) : null, title: form.title, address: form.address, developmentName: form.developmentName, propertyType: form.propertyType, garageSpaces: form.garageSpaces.trim() ? Number(form.garageSpaces) : null, unitNumber: form.unitNumber, bedrooms: form.bedrooms.trim() ? Number(form.bedrooms) : null, suites: form.suites.trim() ? Number(form.suites) : null, bathrooms: form.bathrooms.trim() ? Number(form.bathrooms) : null, privateArea: form.privateArea, keys: form.keys, developmentInfo: form.developmentInfo, mapUrl: form.mapUrl, responsibleName: form.responsibleName, responsiblePhone: form.responsiblePhone, details: form.details.split("\n").map(item => item.trim()).filter(Boolean), price: form.price, commission: form.commission, paymentConditions: form.paymentConditions, notes: form.notes, photos: form.photos.split("\n").map(item => item.trim()).filter(Boolean), coverPhoto: form.coverPhoto.trim(), propertyPhotos: form.propertyPhotos.split("\n").map(item => item.trim()).filter(Boolean), developmentPhotos: form.developmentPhotos.split("\n").map(item => item.trim()).filter(Boolean), mapDriveUrl: form.mapDriveUrl.trim(), photosDriveUrl: form.photosDriveUrl.trim(), videosDriveUrl: form.videosDriveUrl.trim(), status: form.status, publicEnabled: form.publicEnabled };
     if (editing === "new") create.mutate(data); else if (typeof editing === "number") update.mutate({ id: editing, data });
   }
-  const busy = create.isPending || update.isPending || deletePermanently.isPending;
+  const busy = create.isPending || update.isPending || deletePermanently.isPending || uploadPhoto.isPending || deletePhoto.isPending;
   const sampleCsv = "titulo;endereco;preco;detalhes;fotos;status;publico\nApartamento Horizonte 101;Rua Central 100;R$ 850.000;02 dormitórios|80 M²|Box;https://exemplo.com/foto.jpg;available;sim";
 
   return <div className="min-h-screen bg-[#f7f8fa]">
