@@ -128,7 +128,16 @@ async function serveAppWithPreview(request: Request, assets: Fetcher) {
     assets.fetch(new Request(new URL("/", request.url), request)),
     getPropertyPreview(request),
   ]);
-  if (!preview || !response.ok) return response;
+  if (!preview || !response.ok) {
+    if (response.ok && request.method === "GET") {
+      const headers = new Headers(response.headers);
+      headers.set("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+      const shell = new Response(response.body, { status: response.status, headers });
+      await cache.put(cacheKey, shell.clone());
+      return shell;
+    }
+    return response;
+  }
   const html = await response.text();
   const tags = [
     `<meta name="description" content="${escapeHtml(preview.description)}" />`,
@@ -238,7 +247,7 @@ export default {
           const headers = new Headers(response.headers);
           headers.set("Cache-Control", "public, max-age=30, s-maxage=60, stale-while-revalidate=120");
           const cachedResponse = new Response(response.body, { status: response.status, headers });
-          ctx.waitUntil(cache.put(cacheKey, cachedResponse.clone()));
+          await cache.put(cacheKey, cachedResponse.clone());
           return cachedResponse;
         }
         return response;
