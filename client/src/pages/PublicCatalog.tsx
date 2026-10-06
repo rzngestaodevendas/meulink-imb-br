@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, CheckCircle2, Download, Link2, LogIn, MapPin, MessageCircle, Share2 } from "lucide-react";
 import { useRoute } from "wouter";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type Property = {
@@ -68,6 +68,7 @@ export default function PublicCatalog() {
   const catalog = trpc.portal.publicCatalog.useQuery({ slug, responsible }, { enabled: Boolean(slug), staleTime: 60_000, gcTime: 300_000, refetchOnWindowFocus: false });
   const currentCatalog = catalog.data?.organization.slug === slug ? catalog.data : undefined;
   const [visibleCount, setVisibleCount] = useState(24);
+  useEffect(() => { setVisibleCount(24); }, [slug, responsible]);
 
   if (catalog.error) return <div className="grid min-h-screen place-items-center bg-[#f5f7f8] p-5 text-sm text-red-700">Esta apresentação não está disponível.</div>;
   if (catalog.isLoading || !currentCatalog) return <div className="grid min-h-screen place-items-center bg-[#f5f7f8] text-sm text-slate-500">Preparando sua apresentação...</div>;

@@ -27,19 +27,6 @@ type PreviewCatalog = {
   logoUrl?: string | null;
 };
 
-let previewColumnsReady = false;
-async function ensurePreviewColumns(database: D1Database) {
-  if (previewColumnsReady) return;
-  for (const column of ["coverPhoto", "propertyPhotos", "developmentPhotos"]) {
-    try {
-      await database.prepare(`ALTER TABLE properties ADD COLUMN ${column} TEXT`).run();
-    } catch (error) {
-      if (!String(error).toLowerCase().includes("duplicate column")) throw error;
-    }
-  }
-  previewColumnsReady = true;
-}
-
 function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
@@ -84,7 +71,6 @@ async function getPropertyPreview(request: Request): Promise<{ title: string; de
 
   const propertyRoute = url.pathname.match(/^\/(?:imovel|((?:corretor|corretora)\/([^/]+))\/imovel)\/ML-\d+$/i);
   if (!propertyRoute && !url.searchParams.has("link")) return null;
-  await ensurePreviewColumns(database);
   let property: PreviewProperty | null = null;
   let sharedBrokerName = "";
   const codeMatch = url.pathname.match(/^\/(?:imovel|((?:corretor|corretora)\/([^/]+))\/imovel)\/(ML-\d+)$/i);

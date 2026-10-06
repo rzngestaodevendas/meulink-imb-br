@@ -115,6 +115,35 @@ function parseCatalogProperty(row: typeof properties.$inferSelect) {
   const property = parseProperty(row, true);
   return { ...property, notes: null, details: [], developmentInfo: null, photos: property.coverPhoto ? [property.coverPhoto] : (property.photos[0] ? [property.photos[0]] : []), propertyPhotos: [], developmentPhotos: [] };
 }
+type CatalogPropertyRow = {
+  id: number; slug: string; title: string; address: string | null; developmentName: string | null; propertyType: string | null;
+  garageSpaces: number | null; unitNumber: string | null; bedrooms: number | null; suites: number | null; bathrooms: number | null;
+  privateArea: string | null; keys: string | null; responsibleName: string | null; responsiblePhone: string | null; price: string | null;
+  commission: string | null; photos: string; coverPhoto: string | null; mapDriveUrl: string | null; photosDriveUrl: string | null;
+  videosDriveUrl: string | null; status: typeof properties.$inferSelect.status; publicEnabled: number;
+};
+const catalogPropertySelection = {
+  id: properties.id, slug: properties.slug, title: properties.title, address: properties.address, developmentName: properties.developmentName,
+  propertyType: properties.propertyType, garageSpaces: properties.garageSpaces, unitNumber: properties.unitNumber, bedrooms: properties.bedrooms,
+  suites: properties.suites, bathrooms: properties.bathrooms, privateArea: properties.privateArea, keys: properties.keys,
+  responsibleName: properties.responsibleName, responsiblePhone: properties.responsiblePhone, price: properties.price, commission: properties.commission,
+  photos: properties.photos, coverPhoto: properties.coverPhoto, mapDriveUrl: properties.mapDriveUrl, photosDriveUrl: properties.photosDriveUrl,
+  videosDriveUrl: properties.videosDriveUrl, status: properties.status, publicEnabled: properties.publicEnabled,
+};
+function parseCatalogPropertyLight(row: CatalogPropertyRow) {
+  let photos: string[] = [];
+  try { photos = JSON.parse(row.photos || "[]") as string[]; } catch { photos = []; }
+  const coverPhoto = row.coverPhoto || photos[0] || "";
+  return {
+    id: row.id, code: `ML-${String(row.id).padStart(6, "0")}`, slug: row.slug, title: row.title, address: row.address,
+    developmentName: row.developmentName, propertyType: row.propertyType || "Apartamento", garageSpaces: row.garageSpaces,
+    unitNumber: row.unitNumber, bedrooms: row.bedrooms, suites: row.suites, bathrooms: row.bathrooms, privateArea: row.privateArea,
+    keys: row.keys, responsibleName: row.responsibleName, responsiblePhone: row.responsiblePhone, details: [], price: row.price,
+    commission: row.commission, notes: null, photos: coverPhoto ? [coverPhoto] : [], coverPhoto, propertyPhotos: [], developmentPhotos: [],
+    mapDriveUrl: row.mapDriveUrl, photosDriveUrl: row.photosDriveUrl, videosDriveUrl: row.videosDriveUrl, status: row.status,
+    publicEnabled: Boolean(row.publicEnabled),
+  };
+}
 function publicOrganizationSlug(slug: string) {
   return slug === "felipe-demo" ? "masterplan-business" : slug;
 }
@@ -129,6 +158,17 @@ async function getPropertiesForOrganization(db: Awaited<ReturnType<typeof getDb>
   const linked = await db.select().from(properties).where(inArray(properties.id, linkedIds));
   const scopedLinked = applyResponsibleScope(linked, links, responsibleName);
   return [...owned, ...scopedLinked];
+}
+async function getCatalogPropertiesForOrganization(db: Awaited<ReturnType<typeof getDb>>, organizationId: number, responsibleName?: string): Promise<CatalogPropertyRow[]> {
+  if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+  const [owned, links] = await Promise.all([
+    db.select(catalogPropertySelection).from(properties).where(responsibleName ? and(eq(properties.organizationId, organizationId), eq(properties.responsibleName, responsibleName)) : eq(properties.organizationId, organizationId)),
+    db.select({ propertyId: organizationProperties.propertyId, responsibleName: organizationProperties.responsibleName, responsiblePhone: organizationProperties.responsiblePhone }).from(organizationProperties).where(eq(organizationProperties.organizationId, organizationId)),
+  ]);
+  const linkedIds = links.map(link => link.propertyId).filter(id => !owned.some(property => property.id === id));
+  if (!linkedIds.length) return owned;
+  const linked = await db.select(catalogPropertySelection).from(properties).where(inArray(properties.id, linkedIds));
+  return [...owned, ...applyResponsibleScope(linked, links, responsibleName)];
 }
 
 async function propertyBelongsToOrganization(db: Awaited<ReturnType<typeof getDb>>, organizationId: number, propertyId: number) {
@@ -477,12 +517,14 @@ export const appRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
       const lookupSlug = input.slug === "masterplan-business" ? "felipe-demo" : input.slug; const [organization] = await db.select().from(organizations).where(eq(organizations.slug, lookupSlug)).limit(1);
       if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." });
-      const profileRows = await db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, organization.id)).orderBy(responsibleProfiles.name);
+      const [profileRows, rows] = await Promise.all([
+        db.select({ id: responsibleProfiles.id, organizationId: responsibleProfiles.organizationId, name: responsibleProfiles.name, phone: responsibleProfiles.phone, email: responsibleProfiles.email, creci: responsibleProfiles.creci, photoUrl: responsibleProfiles.photoUrl, bio: responsibleProfiles.bio }).from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, organization.id)).orderBy(responsibleProfiles.name),
+        getCatalogPropertiesForOrganization(db, organization.id),
+      ]);
       const profileSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       const selectedProfile = input.responsible ? profileRows.find(profile => profile.name === input.responsible || profileSlug(profile.name) === input.responsible) : undefined;
-      let rows = (await getPropertiesForOrganization(db, organization.id, selectedProfile?.name)).filter(row => row.status === "available" && row.publicEnabled === 1);
-      rows.sort((a, b) => a.title.localeCompare(b.title));
-      return { organization: { name: organization.name, publicName: organization.publicName, catalogPeriod: organization.catalogPeriod, slug: input.slug, logoUrl: organization.logoUrl, coverPhotoUrl: organization.coverPhotoUrl, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName }, profiles: profileRows, properties: rows.map(row => parseCatalogProperty(row)) };
+      const visibleRows = (selectedProfile ? rows.filter(row => (row.responsibleName || "").trim().toLowerCase() === selectedProfile.name.trim().toLowerCase()) : rows).filter(row => row.status === "available" && row.publicEnabled === 1).sort((a, b) => a.title.localeCompare(b.title));
+      return { organization: { name: organization.name, publicName: organization.publicName, catalogPeriod: organization.catalogPeriod, slug: input.slug, logoUrl: organization.logoUrl, coverPhotoUrl: organization.coverPhotoUrl, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName }, profiles: profileRows, properties: visibleRows.map(row => parseCatalogPropertyLight(row)) };
     }),
     catalog: protectedProcedure.input(z.object({ slug: z.string().trim().min(2).max(120), responsible: z.string().trim().max(180).optional() })).query(async ({ ctx, input }) => {
       await ensureOrganizationColumns(); await ensureResponsibleProfilesTable(); await ensurePropertyPrivateColumns();
@@ -493,12 +535,14 @@ export const appRouter = router({
       if (!organization) throw new TRPCError({ code: "NOT_FOUND", message: "Tabela não encontrada." });
       const [membership] = await db.select().from(organizationMembers).where(and(eq(organizationMembers.organizationId, organization.id), eq(organizationMembers.userId, ctx.user.id))).limit(1);
       if (!membership) throw new TRPCError({ code: "FORBIDDEN", message: "Sua conta não tem acesso a esta tabela." });
-      const profiles = await db.select().from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, organization.id)).orderBy(responsibleProfiles.name);
+      const [profiles, rows] = await Promise.all([
+        db.select({ id: responsibleProfiles.id, organizationId: responsibleProfiles.organizationId, name: responsibleProfiles.name, phone: responsibleProfiles.phone, email: responsibleProfiles.email, creci: responsibleProfiles.creci, photoUrl: responsibleProfiles.photoUrl, bio: responsibleProfiles.bio }).from(responsibleProfiles).where(eq(responsibleProfiles.organizationId, organization.id)).orderBy(responsibleProfiles.name),
+        getCatalogPropertiesForOrganization(db, organization.id),
+      ]);
       const profileSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       const selectedProfile = input.responsible ? profiles.find(profile => profile.name === input.responsible || profileSlug(profile.name) === input.responsible) : undefined;
-      let rows = (await getPropertiesForOrganization(db, organization.id, selectedProfile?.name)).filter(row => row.status === "available" && row.publicEnabled === 1);
-      rows.sort((a, b) => a.title.localeCompare(b.title));
-      return { organization: { id: organization.id, slug: input.slug, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, contactName: organization.contactName, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName, developmentDescription: organization.developmentDescription }, memberRole: membership.role, profiles, properties: rows.map(row => parseCatalogProperty(row)) };
+      const visibleRows = (selectedProfile ? rows.filter(row => (row.responsibleName || "").trim().toLowerCase() === selectedProfile.name.trim().toLowerCase()) : rows).filter(row => row.status === "available" && row.publicEnabled === 1).sort((a, b) => a.title.localeCompare(b.title));
+      return { organization: { id: organization.id, slug: input.slug, name: organization.name, publicName: organization.publicName, logoUrl: organization.logoUrl, contactName: organization.contactName, contactPhone: organization.contactPhone, tableType: organization.tableType, developmentName: organization.developmentName, developmentDescription: organization.developmentDescription }, memberRole: membership.role, profiles, properties: visibleRows.map(row => parseCatalogPropertyLight(row)) };
     }),
   }),
 
